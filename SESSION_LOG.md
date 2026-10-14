@@ -354,10 +354,14 @@ minor. D29's conflict with R1 is gone (reversed by D32).
   - Build the visual **Artifact** (Phase 7): Serving = the PRD's computed "Active" (D12),
     D32 inheritance, D28 weighting, and Demo mode.
   - Finalize the Obsidian note.
-- **Next step 2, commit to a repo:** the user will provide the repo URL. The local repo
-  still has **no commits**. Plan: a baseline commit (the frozen snapshot), then one for
-  the scheduling work. Pushes only on explicit request, with a temporary PAT inline (see
-  Process commitments).
+- **Done 2026-10-16, committed and pushed** to the private repo
+  `github.com/tggorton/Radius-Dynamic-Scheduling` (`main`):
+  - `930f476`: the baseline, i.e. src + config exactly as in Radius-AdTags-Prototype
+    @ `1d3cc2e`.
+  - `ecc87bc`: the Dynamic Scheduling prototype and docs. Diff the two commits to see
+    everything this phase changed.
+  - The push used a temporary token inline only. `.git/config` holds the plain URL, and
+    the keychain didn't store the token. **Revoke that token.**
 - **Possible refinements (not requested):**
   - Skip the timezone-mismatch warning when the parent has no specific times.
   - Wording for "Immediate · Started …".
