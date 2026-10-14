@@ -1,25 +1,29 @@
 import { Button, IconButton, Stack, Typography } from "@mui/material";
-import KeyboardArrowDownIcon from "@mui/icons-material/KeyboardArrowDown";
 import EditIcon from "@mui/icons-material/Edit";
-import NavigateNextIcon from "@mui/icons-material/NavigateNext";
+import { ParentMenuButton } from "./ParentMenuButton";
 
 interface Props {
   name: string;
+  campaignName: string;
+  onBackToCampaign: () => void;
 }
 
-export const LineItemHeader = ({ name }: Props) => (
+/**
+ * Line-item title row. The way back to the campaign lives behind the same
+ * chevron the campaign header uses: it opens a menu listing the parent
+ * campaign, and picking it opens the campaign view.
+ */
+export const LineItemHeader = ({ name, campaignName, onBackToCampaign }: Props) => (
   <Stack
     direction="row"
     alignItems="center"
     justifyContent="space-between"
+    spacing={2}
     sx={{ mb: 3 }}
   >
-    <Stack direction="row" alignItems="center" spacing={0.5}>
-      <IconButton size="small" sx={{ color: "text.secondary" }}>
-        <KeyboardArrowDownIcon fontSize="small" />
-      </IconButton>
-      <NavigateNextIcon sx={{ color: "text.secondary", fontSize: 18 }} />
-      <Typography variant="h6" sx={{ ml: 1, fontWeight: 500 }}>
+    <Stack direction="row" alignItems="center" spacing={0.5} sx={{ minWidth: 0 }}>
+      <ParentMenuButton kind="Campaign" name={campaignName} onSelect={onBackToCampaign} />
+      <Typography variant="h6" noWrap title={name} sx={{ ml: 1, fontWeight: 500, minWidth: 0 }}>
         {name}
       </Typography>
       <IconButton size="small" sx={{ color: "text.secondary", ml: 0.5 }}>
@@ -34,6 +38,7 @@ export const LineItemHeader = ({ name }: Props) => (
         "&:hover": { backgroundColor: "primary.dark" },
         px: 2.5,
         py: 1,
+        flexShrink: 0,
       }}
     >
       Clone This Line Item

@@ -1,0 +1,528 @@
+<title>3rd-Party Push</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,500;12..96,600;12..96,700&family=IBM+Plex+Mono:wght@400;500;600&family=IBM+Plex+Sans:wght@400;500;600;700&display=swap">
+
+<style>
+  :root {
+    --bg: #EEF0F3; --surface: #FFFFFF; --surface-2: #F6F7F9; --sunken: #EDEFF3;
+    --ink: #14171C; --ink-2: #545A66; --ink-3: #838A97;
+    --line: #E1E4EA; --line-strong: #CED3DB;
+    --accent: #D80070; --accent-2: #EF0078; --accent-soft: #FBE4F0; --nav: #001529;
+    --s-green: #1E9C68; --s-amber: #B8791A; --s-red: #D2373C; --s-orange: #CF551F; --s-grey: #7C8390;
+    --sans: "IBM Plex Sans", system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+    --display: "Bricolage Grotesque", "IBM Plex Sans", system-ui, sans-serif;
+    --mono: "IBM Plex Mono", ui-monospace, SFMono-Regular, Menlo, monospace;
+    --radius: 12px; --maxw: 800px;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root:not([data-theme="light"]) {
+      --bg: #101216; --surface: #181B21; --surface-2: #1F232A; --sunken: #0D0F13;
+      --ink: #EDEFF4; --ink-2: #ADB3BF; --ink-3: #7C8391;
+      --line: #292D36; --line-strong: #394050;
+      --accent: #FF4DA0; --accent-2: #FF4DA0; --accent-soft: #2B1421; --nav: #A9C2DE;
+      --s-green: #46C88C; --s-amber: #F1B24E; --s-red: #F06E72; --s-orange: #F4895A; --s-grey: #8E949F;
+    }
+  }
+  :root[data-theme="dark"] {
+    --bg: #101216; --surface: #181B21; --surface-2: #1F232A; --sunken: #0D0F13;
+    --ink: #EDEFF4; --ink-2: #ADB3BF; --ink-3: #7C8391;
+    --line: #292D36; --line-strong: #394050;
+    --accent: #FF4DA0; --accent-2: #FF4DA0; --accent-soft: #2B1421; --nav: #A9C2DE;
+    --s-green: #46C88C; --s-amber: #F1B24E; --s-red: #F06E72; --s-orange: #F4895A; --s-grey: #8E949F;
+  }
+
+  * { box-sizing: border-box; }
+  body { margin: 0; background: var(--bg); color: var(--ink); font-family: var(--sans);
+    line-height: 1.62; -webkit-font-smoothing: antialiased; }
+  .wrap { max-width: var(--maxw); margin: 0 auto; padding: 0 24px 96px; }
+  a { color: var(--accent); text-decoration: none; }
+  a:hover { text-decoration: underline; }
+  a:focus-visible { outline: 2px solid var(--accent); outline-offset: 3px; border-radius: 3px; }
+
+  /* ---- header ---- */
+  header.hero { padding: 64px 0 30px; border-bottom: 1px solid var(--line); }
+  .kicker { display: inline-flex; align-items: center; gap: 9px; font-family: var(--mono);
+    font-size: 12px; letter-spacing: 0.12em; text-transform: uppercase; color: var(--accent); font-weight: 600; }
+  .kicker .sig { width: 22px; height: 3px; background: var(--accent); border-radius: 2px; }
+  h1 { font-family: var(--display); font-weight: 700; font-size: clamp(40px, 8vw, 68px);
+    line-height: 1.0; letter-spacing: -0.02em; margin: 20px 0 0; text-wrap: balance; }
+  .lede { font-size: clamp(17px, 2.3vw, 20px); color: var(--ink-2); max-width: 60ch; margin: 18px 0 0; }
+  .meta { display: flex; flex-wrap: wrap; gap: 8px 10px; margin-top: 26px; }
+  .pill { display: inline-flex; align-items: center; gap: 7px; font-family: var(--mono); font-size: 12px;
+    color: var(--ink-2); background: var(--surface); border: 1px solid var(--line); border-radius: 999px; padding: 5px 12px; }
+  .pill strong { color: var(--ink); font-weight: 600; }
+  .pill.now { background: var(--accent-soft); border-color: transparent; color: var(--accent); }
+  .pill.now strong { color: var(--accent); }
+
+  /* ---- sections ---- */
+  section { padding-top: 46px; }
+  .eyebrow { font-family: var(--mono); font-size: 12px; letter-spacing: 0.1em; text-transform: uppercase;
+    color: var(--ink-3); font-weight: 600; }
+  h2 { font-family: var(--display); font-weight: 600; font-size: clamp(24px, 4vw, 31px);
+    letter-spacing: -0.01em; line-height: 1.15; margin: 8px 0 0; text-wrap: balance; }
+  h3 { font-family: var(--display); font-weight: 600; font-size: 18px; margin: 26px 0 6px; letter-spacing: -0.01em; }
+  p { margin: 14px 0 0; }
+  p, li { color: var(--ink-2); }
+  p strong, li strong { color: var(--ink); font-weight: 600; }
+  .sec-intro { font-size: 17px; margin-top: 12px; max-width: 66ch; }
+  ul { margin: 14px 0 0; padding-left: 0; list-style: none; }
+  ul.bul li { position: relative; padding-left: 20px; margin-top: 9px; }
+  ul.bul li::before { content: ""; position: absolute; left: 3px; top: 10px; width: 6px; height: 6px;
+    border-radius: 50%; background: var(--accent); }
+  code, .mono { font-family: var(--mono); font-size: 0.86em; background: var(--surface-2);
+    border: 1px solid var(--line); border-radius: 5px; padding: 1px 6px; color: var(--ink); }
+
+  .callout { background: var(--surface); border: 1px solid var(--line); border-left: 3px solid var(--accent);
+    border-radius: var(--radius); padding: 20px 24px; margin-top: 22px; }
+  .callout .eyebrow { color: var(--accent); }
+  .callout p { margin-top: 7px; color: var(--ink-2); }
+  .callout.note { border-left-color: var(--s-amber); }
+
+  /* ---- feature inventory cards ---- */
+  .inv { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; margin-top: 24px; }
+  @media (max-width: 640px) { .inv { grid-template-columns: 1fr; } }
+  .invcard { background: var(--surface); border: 1px solid var(--line); border-radius: var(--radius); padding: 20px 22px; }
+  .invcard h4 { font-family: var(--mono); font-size: 11.5px; letter-spacing: 0.09em; text-transform: uppercase;
+    color: var(--ink-3); font-weight: 600; margin: 0 0 12px; }
+  .invcard ul { margin: 0; }
+  .invcard li { position: relative; padding-left: 24px; margin-top: 10px; font-size: 14.5px; color: var(--ink-2); line-height: 1.5; }
+  .invcard li:first-child { margin-top: 0; }
+  .invcard li::before { content: ""; position: absolute; left: 0; top: 3px; width: 14px; height: 14px;
+    border-radius: 4px; background: var(--accent-soft); border: 1px solid var(--accent); }
+  .invcard li::after { content: ""; position: absolute; left: 4.5px; top: 6px; width: 4px; height: 7px;
+    border: solid var(--accent); border-width: 0 2px 2px 0; transform: rotate(45deg); }
+  .invcard.muted li::before { background: var(--surface-2); border-color: var(--line-strong); }
+  .invcard.muted li::after { border-color: var(--ink-3); }
+
+  /* ---- tables ---- */
+  .tbl-scroll { overflow-x: auto; margin-top: 20px; border: 1px solid var(--line); border-radius: var(--radius); }
+  table { width: 100%; border-collapse: collapse; font-size: 14.5px; min-width: 520px; }
+  th, td { text-align: left; padding: 13px 16px; border-bottom: 1px solid var(--line); vertical-align: top; }
+  tr:last-child td { border-bottom: none; }
+  thead th { font-family: var(--mono); font-size: 11px; letter-spacing: 0.06em; text-transform: uppercase;
+    color: var(--ink-3); font-weight: 600; background: var(--surface-2); }
+  td { color: var(--ink-2); }
+  td.desc strong, td strong { color: var(--ink); }
+  .stname { display: inline-flex; align-items: center; gap: 9px; color: var(--ink); font-weight: 600; white-space: nowrap; }
+
+  /* status legend chips (theme-aware, doc chrome) */
+  .chips { display: flex; flex-wrap: wrap; gap: 9px; margin-top: 20px; }
+  .chip { display: inline-flex; align-items: center; gap: 8px; font-size: 13.5px; color: var(--ink);
+    background: var(--surface); border: 1px solid var(--line); border-radius: 999px; padding: 6px 13px 6px 11px; }
+  .chip .k { font-family: var(--mono); font-size: 11px; color: var(--ink-3); }
+  .dot { width: 9px; height: 9px; border-radius: 50%; flex-shrink: 0; }
+  .dot--ring { background: transparent !important; border: 1.6px solid; }
+  .d-green { background: var(--s-green); border-color: var(--s-green); }
+  .d-amber { background: var(--s-amber); border-color: var(--s-amber); }
+  .d-red { background: var(--s-red); border-color: var(--s-red); }
+  .d-orange { background: var(--s-orange); border-color: var(--s-orange); }
+  .d-grey { background: var(--s-grey); border-color: var(--s-grey); }
+
+  /* ---- split (prototype vs production) ---- */
+  .split { display: grid; grid-template-columns: 1fr 1fr; margin-top: 22px; border: 1px solid var(--line);
+    border-radius: var(--radius); overflow: hidden; }
+  @media (max-width: 640px) { .split { grid-template-columns: 1fr; } }
+  .split > div { padding: 18px 20px; }
+  .split > div:first-child { border-right: 1px solid var(--line); background: var(--surface-2); }
+  @media (max-width: 640px) { .split > div:first-child { border-right: none; border-bottom: 1px solid var(--line); } }
+  .split h4 { font-family: var(--mono); font-size: 11px; letter-spacing: 0.08em; text-transform: uppercase; margin: 0 0 6px; }
+  .split .proto h4 { color: var(--s-amber); }
+  .split .prod h4 { color: var(--s-green); }
+  .split ul { margin: 0; }
+  .split li { position: relative; padding-left: 16px; margin-top: 9px; font-size: 14px; }
+  .split li::before { content: ""; position: absolute; left: 0; top: 9px; width: 5px; height: 5px; border-radius: 50%; background: var(--ink-3); }
+
+  /* ---- implementation map ---- */
+  .imap { margin-top: 22px; border: 1px solid var(--line); border-radius: var(--radius); overflow: hidden; }
+  .imap .row { padding: 16px 20px; border-top: 1px solid var(--line); }
+  .imap .row:first-child { border-top: none; }
+  .imap .lbl { font-family: var(--mono); font-size: 11px; letter-spacing: 0.07em; text-transform: uppercase;
+    color: var(--accent); font-weight: 600; margin-bottom: 8px; }
+  .imap .item { margin-top: 7px; font-size: 14px; color: var(--ink-2); }
+  .imap .item:first-of-type { margin-top: 0; }
+  .imap .fn { font-family: var(--mono); font-size: 12.5px; color: var(--ink); }
+  .swaps { counter-reset: swap; }
+  .swaps .item { position: relative; padding-left: 30px; margin-top: 11px; }
+  .swaps .item::before { counter-increment: swap; content: counter(swap); position: absolute; left: 0; top: -1px;
+    width: 20px; height: 20px; border-radius: 50%; background: var(--accent); color: #fff;
+    font-family: var(--mono); font-size: 11px; font-weight: 600; display: grid; place-items: center; }
+
+  /* ---- numbered walkthrough ---- */
+  .steps { counter-reset: step; margin-top: 22px; display: flex; flex-direction: column; gap: 12px; }
+  .step { position: relative; padding: 16px 18px 16px 58px; background: var(--surface); border: 1px solid var(--line); border-radius: var(--radius); }
+  .step::before { counter-increment: step; content: counter(step); position: absolute; left: 16px; top: 15px;
+    width: 28px; height: 28px; border-radius: 8px; background: var(--nav); color: #fff;
+    font-family: var(--mono); font-weight: 600; font-size: 14px; display: grid; place-items: center; }
+  :root[data-theme="dark"] .step::before, :root:not([data-theme="light"]) .step::before { color: #0D0F13; }
+  .step h4 { margin: 0 0 2px; font-size: 15px; font-weight: 600; color: var(--ink); font-family: var(--display); }
+  .step p { margin: 0; font-size: 14px; }
+
+  /* ================= UI MOCKUPS — fixed real dark-app palette (read as screenshots) ================= */
+  .mock { border: 1px solid #2a2a2a; border-radius: var(--radius); background: #383838; color: #fff;
+    overflow: hidden; margin-top: 22px; box-shadow: 0 18px 40px -24px rgba(0,0,0,0.5); }
+  .mock-cap { padding: 10px 15px; border-bottom: 1px solid #4a4a4a; background: #2e2e2e; font-family: var(--mono);
+    font-size: 11px; letter-spacing: 0.07em; text-transform: uppercase; color: rgba(255,255,255,0.5);
+    display: flex; align-items: center; gap: 8px; }
+  .mock-cap .lts { display: inline-flex; gap: 6px; }
+  .mock-cap .lts i { width: 9px; height: 9px; border-radius: 50%; background: #555; }
+  .mock-body { padding: 18px 16px; overflow-x: auto; }
+  .mock .mcap-note { color: #cdcdcd; font-size: 13.5px; margin: 16px 2px 0; line-height: 1.5; }
+  .mock .mcap-note strong { color: #fff; }
+  .mock .mono { background: rgba(255,255,255,0.08); border-color: #4a4a4a; color: #eee; }
+  .schip { display: inline-flex; align-items: center; gap: 8px; font-size: 13px; color: #cdcdcd; white-space: nowrap; line-height: 1.5; }
+  .sdot { width: 8px; height: 8px; border-radius: 50%; flex-shrink: 0; }
+  .sdot.ring { background: transparent !important; border: 1.5px solid; }
+  .g { background: #66bb6a; border-color: #66bb6a; } .a { background: #ffa726; border-color: #ffa726; }
+  .r { background: #f44336; border-color: #f44336; } .o { background: #F26522; border-color: #F26522; }
+  .gr { background: rgba(255,255,255,0.55); border-color: rgba(255,255,255,0.55); }
+  .chipcol { display: inline-flex; flex-direction: column; gap: 6px; align-items: flex-start; }
+  .dtbl { width: 100%; border-collapse: collapse; min-width: 660px; font-size: 13px; }
+  .dtbl th { text-align: left; font-size: 11px; font-weight: 500; color: #cdcdcd; padding: 2px 16px 12px; white-space: nowrap; border: none; background: none; font-family: var(--sans); letter-spacing: 0; text-transform: none; }
+  .dtbl th.ra, .dtbl td.ra { text-align: right; }
+  .dtbl td { padding: 12px 16px; border-top: 1px solid #4a4a4a; border-bottom: none; vertical-align: middle; color: #cdcdcd; }
+  .dtbl .nm { color: #fff; white-space: nowrap; }
+  .turl { font-family: var(--mono); font-size: 12px; color: #cdcdcd; white-space: nowrap; overflow: hidden;
+    text-overflow: ellipsis; max-width: 220px; display: inline-block; vertical-align: middle; }
+  .acts { display: inline-flex; gap: 7px; justify-content: flex-end; }
+  .ico { display: inline-flex; width: 18px; height: 18px; color: #cdcdcd; flex-shrink: 0; }
+  .ico svg { width: 100%; height: 100%; fill: currentColor; }
+  .ico.dis { color: rgba(255,255,255,0.3); }
+  .finput { position: relative; border: 1px solid rgba(255,255,255,0.23); border-radius: 4px; padding: 13px 12px;
+    font-size: 14px; color: #fff; background: transparent; display: flex; align-items: center; justify-content: space-between; gap: 8px; }
+  .finput.ro { background: rgba(255,255,255,0.05); }
+  .finput .fl { position: absolute; top: -7px; left: 9px; padding: 0 5px; background: #383838; font-size: 11px; color: #cdcdcd; }
+  .finput .car { color: #cdcdcd; font-size: 20px; line-height: 0.5; }
+  .fhelp { font-size: 12px; color: #cdcdcd; margin: 5px 14px 0; }
+  .mlabel { font-size: 11px; letter-spacing: 0.08em; text-transform: uppercase; color: #cdcdcd; margin: 0 0 8px; font-weight: 600; font-family: var(--mono); }
+  .mbtn { font-size: 13px; font-weight: 600; letter-spacing: 0.04em; text-transform: uppercase; padding: 6px 8px; border-radius: 4px; white-space: nowrap; }
+  .mbtn.text { color: #EF0078; } .mbtn.dis { color: rgba(255,255,255,0.3); }
+  .mbar { display: flex; align-items: center; gap: 10px; }
+  .grow { flex: 1; }
+  .chk { width: 18px; height: 18px; border-radius: 3px; background: #EF0078; position: relative; flex-shrink: 0; }
+  .chk::after { content: ""; position: absolute; left: 6px; top: 2px; width: 4px; height: 9px; border: solid #fff; border-width: 0 2px 2px 0; transform: rotate(45deg); }
+  .chk.off { background: transparent; border: 2px solid rgba(255,255,255,0.5); }
+  .chk.off::after { display: none; }
+  .chkrow { display: flex; align-items: center; justify-content: space-between; padding: 9px 0; gap: 12px; }
+  .chkrow + .chkrow { border-top: 1px solid #4a4a4a; }
+  .lockrow { display: inline-flex; align-items: center; gap: 11px; }
+
+  footer { margin-top: 56px; padding-top: 24px; border-top: 1px solid var(--line); color: var(--ink-3); font-size: 13.5px; }
+  footer a { color: var(--ink-2); }
+  @media (prefers-reduced-motion: reduce) { * { scroll-behavior: auto; } }
+</style>
+
+<div class="wrap">
+  <header class="hero">
+    <span class="kicker"><span class="sig"></span>Radius Ad-Tags · Prototype hand-off</span>
+    <h1>3rd-Party Push</h1>
+    <p class="lede">Pushing distribution tags to a platform — Nexxen, The Trade Desk, and the DSPs/SSPs to come — with a per-distro delivery status the team can act on.</p>
+    <div class="meta">
+      <span class="pill now"><strong>Team builds this first</strong></span>
+      <span class="pill">as of <strong>2026-08-13</strong></span>
+      <span class="pill">React · TypeScript · MUI</span>
+      <span class="pill"><span class="mono">localhost:5174</span></span>
+      <span class="pill">Companion: <strong>Transcoding</strong></span>
+    </div>
+  </header>
+
+  <section>
+    <span class="eyebrow">Read this first</span>
+    <h2>A behavior prototype, not a partial build</h2>
+    <p class="sec-intro">There's no backend and no real auth — all state lives in the browser (localStorage), and every external call (advertiser lookup, push) is <strong>simulated</strong>. Its job is to pin down the intended behavior and screens so the team can scope and build the real thing. Throughout, each feature is split into <em>what the prototype does</em> vs. <em>what production must own</em>.</p>
+    <div class="callout">
+      <span class="eyebrow">Foundations (shared with Transcoding)</span>
+      <p><strong>Two status lifecycles.</strong> Every distribution tag carries two independent statuses, one column each: <strong>Platform Status</strong> (this doc) and <strong>Transcode Status</strong> (the Transcoding doc). A tag can be transcoded and live yet never pushed — or pushed and rejected. <strong>Platform, not DSP:</strong> today a platform is a DSP (Nexxen, The Trade Desk); the naming deliberately spans DSP <em>and</em> SSP so supply-side targets fit later. <strong>Readability:</strong> each status is a colored dot <em>and</em> a label; same-hue states are told apart by a ring-vs-solid dot.</p>
+    </div>
+  </section>
+
+  <section>
+    <span class="eyebrow">Everything it entails</span>
+    <h2>Feature inventory</h2>
+    <p class="sec-intro">Every unique behavior the 3rd-Party Push track adds, at a glance. Each is detailed in the sections that follow.</p>
+    <div class="inv">
+      <div class="invcard">
+        <h4>Pushing tags</h4>
+        <ul>
+          <li><strong>Push Tags to Platform</strong> dialog — pick a platform + advertiser, choose which tags, push.</li>
+          <li><strong>Platform-drives-selection</strong> — choosing a platform auto-selects its tags and disables the rest.</li>
+          <li><strong>family→platform lock</strong> — a tag can only be pushed to the platform it was built for.</li>
+          <li><strong>Partial push</strong> — uncheck any tags; live "N of M selected" count + count-aware button.</li>
+          <li><strong>Add + Push / Save + Push</strong> — push straight from the tag editor, pre-scoped.</li>
+        </ul>
+      </div>
+      <div class="invcard">
+        <h4>Advertiser model</h4>
+        <ul>
+          <li><strong>Platform-scoped advertisers</strong> — each platform returns its own set (dependent dropdown).</li>
+          <li><strong>Name + ID</strong> display — <span class="mono">Advertiser 1 · 012345</span>.</li>
+          <li><strong>One advertiser per platform, locked</strong> — first push sets it; then disabled with a lock icon + "contact support" tooltip.</li>
+          <li><strong>Async load</strong> with a stale-response guard.</li>
+        </ul>
+      </div>
+      <div class="invcard">
+        <h4>Platform Status (per distro)</h4>
+        <ul>
+          <li>A dedicated <strong>Platform Status</strong> column, independent of Transcode Status.</li>
+          <li>Five states — Not pushed / Pushing / Success / Error / Inactive — the chip names the destination.</li>
+          <li><strong>Link / Unlink row icon</strong> — unlink Success → Inactive; relink Inactive/Error → Success. Both confirm first.</li>
+        </ul>
+      </div>
+      <div class="invcard muted">
+        <h4>Prototype-only (gone in production)</h4>
+        <ul>
+          <li><span class="mono">⋯</span> menu "Set platform status" to force any state during a walkthrough.</li>
+          <li>Optimistic push (always lands Success).</li>
+          <li>Mocked advertiser lists with simulated latency.</li>
+        </ul>
+      </div>
+    </div>
+  </section>
+
+  <section>
+    <span class="eyebrow">The push flow</span>
+    <h2>What it does</h2>
+    <p class="sec-intro"><strong>Push Tags to Platform</strong> (a button in the Distributions section, disabled until at least one tag exists) opens a dialog to choose a destination and exactly which tags to send.</p>
+    <ul class="bul">
+      <li>Advertisers are <strong>scoped to the platform</strong> — each platform returns its own set — so the platform must be chosen before the advertiser field enables.</li>
+      <li>Each advertiser shows as <strong>name + advertiser ID</strong> (<span class="mono">Advertiser 1 · 012345</span>; the ID format is a placeholder).</li>
+      <li><strong>One advertiser per platform, locked.</strong> The first push to a platform sets its advertiser; every push after that reuses it and the field is <strong>disabled</strong> — greyed, with a lock icon and a <em>"contact support to change the advertiser for this platform"</em> tooltip. Changing it is deliberately a support operation, not a self-serve control, because linking a platform + advertiser is non-trivial on the backend.</li>
+      <li>The advertiser list loads <strong>asynchronously</strong> with a spinner, and a stale-response guard keeps a slow reply from overwriting a newer platform's list.</li>
+    </ul>
+
+    <h3>A tag can only go to its own platform</h3>
+    <p>A tag is built for one platform — its <span class="mono">family</span> (Nexxen or TTD today) — and can only be pushed there. One push targets a single platform, and the platform <strong>drives the selection</strong>: the picker always lists every platform, and choosing one <strong>auto-selects that platform's tags</strong> (disabling the rest). Switch platforms and the selection swaps. A mixed Nexxen + TTD list needs no manual sorting.</p>
+    <div class="callout note">
+      <span class="eyebrow">Prototype stand-in</span>
+      <p>In the prototype every tag is a Nexxen or TTD tag, so the platform options are exactly those two. <strong>In the final version, tags sync with the platforms directly</strong> — the family→platform lock is the prototype stand-in for that sync.</p>
+    </div>
+
+    <h3>Choosing what to push</h3>
+    <ul class="bul">
+      <li>Until a platform is chosen, nothing is selected — the checklist prompts "Pick a platform to select its tags."</li>
+      <li>Each tag row shows its <strong>platform + current status</strong>, and — for a tag already pushed — the <strong>advertiser + ID it was last assigned to</strong>. Tags on other platforms are disabled.</li>
+      <li>A select-all toggle and a live "3 of 6 Nexxen tags selected" count cover the chosen platform; the button reflects the count (<span class="mono">Push 3 Tags</span>) and stays disabled until a platform, an advertiser, and ≥1 tag are chosen.</li>
+    </ul>
+
+    <h3>Add + Push / Save + Push</h3>
+    <p>The tag editor has a push button in <strong>both modes</strong> — <strong>Add + Push</strong> when creating, <strong>Save + Push</strong> when editing — so a tag can be pushed the moment it's made or any time later. Either saves the tag, then opens the push flow pre-scoped: platform locked to the tag's family, that one tag pre-selected. With the locked advertiser, it's often a single confirm.</p>
+  </section>
+
+  <section>
+    <span class="eyebrow">In the app</span>
+    <h2>The Distributions table</h2>
+    <p class="sec-intro">A pushed tag shows <span class="mono">Success: Nexxen</span> in the Platform Status column and a link-on icon in its actions. A never-pushed tag shows a grey-ring <span class="mono">Not pushed</span> and a disabled link icon.</p>
+    <div class="mock">
+      <div class="mock-cap"><span class="lts"><i></i><i></i><i></i></span> Distributions — the table</div>
+      <div class="mock-body">
+        <table class="dtbl">
+          <thead><tr><th>Name</th><th>Transcode Status</th><th>Platform Status</th><th>Distribution Tag</th><th class="ra">Actions</th></tr></thead>
+          <tbody>
+            <tr>
+              <td class="nm">RedBull_Q1</td>
+              <td><span class="schip"><span class="sdot g"></span>Live: Hulu (Disney)</span></td>
+              <td><span class="schip"><span class="sdot g"></span>Success: Nexxen</span></td>
+              <td><span class="turl">https://r.radius.io/vast/8f3a2c?adv=012345&amp;…</span></td>
+              <td class="ra"><span class="acts">
+                <span class="ico" title="Copy tag URL"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M16 1H4c-1.1 0-2 .9-2 2v14h2V3h12V1zm3 4H8c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h11c1.1 0 2-.9 2-2V7c0-1.1-.9-2-2-2zm0 16H8V7h11v14z"/></svg></span>
+                <span class="ico dis" title="Restart applies when a transcode is Inactive or Error"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M6 13c0-1.65.67-3.15 1.76-4.24L6.34 7.34C4.9 8.79 4 10.79 4 13c0 4.08 3.05 7.44 7 7.93v-2.02c-2.83-.48-5-2.94-5-5.91zm14 0c0-4.42-3.58-8-8-8-.06 0-.12.01-.18.01l1.09-1.09L11.5 2.5 8 6l3.5 3.5 1.41-1.41-1.08-1.08c.06 0 .12-.01.17-.01 3.31 0 6 2.69 6 6 0 2.97-2.17 5.43-5 5.91v2.02c3.95-.49 7-3.85 7-7.93z"/></svg></span>
+                <span class="ico" title="Unlink from Nexxen"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3.9 12c0-1.71 1.39-3.1 3.1-3.1h4V7H7c-2.76 0-5 2.24-5 5s2.24 5 5 5h4v-1.9H7c-1.71 0-3.1-1.39-3.1-3.1zM8 13h8v-2H8v2zm9-6h-4v1.9h4c1.71 0 3.1 1.39 3.1 3.1s-1.39 3.1-3.1 3.1h-4V17h4c2.76 0 5-2.24 5-5s-2.24-5-5-5z"/></svg></span>
+                <span class="ico" title="More actions"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M6 10c-1.1 0-2 .9-2 2s.9 2 2 2 2-.9 2-2-.9-2-2-2zm12 0c-1.1 0-2 .9-2 2s.9 2 2 2 2-.9 2-2-.9-2-2-2zm-6 0c-1.1 0-2 .9-2 2s.9 2 2 2 2-.9 2-2-.9-2-2-2z"/></svg></span>
+              </span></td>
+            </tr>
+            <tr>
+              <td class="nm">RedBull_Q2</td>
+              <td><span class="schip"><span class="sdot ring gr"></span>Default</span></td>
+              <td><span class="schip"><span class="sdot ring gr"></span>Not pushed</span></td>
+              <td><span class="turl">https://r.radius.io/vast/1d90af?…</span></td>
+              <td class="ra"><span class="acts">
+                <span class="ico" title="Copy tag URL"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M16 1H4c-1.1 0-2 .9-2 2v14h2V3h12V1zm3 4H8c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h11c1.1 0 2-.9 2-2V7c0-1.1-.9-2-2-2zm0 16H8V7h11v14z"/></svg></span>
+                <span class="ico dis" title="Restart applies when a transcode is Inactive or Error"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M6 13c0-1.65.67-3.15 1.76-4.24L6.34 7.34C4.9 8.79 4 10.79 4 13c0 4.08 3.05 7.44 7 7.93v-2.02c-2.83-.48-5-2.94-5-5.91zm14 0c0-4.42-3.58-8-8-8-.06 0-.12.01-.18.01l1.09-1.09L11.5 2.5 8 6l3.5 3.5 1.41-1.41-1.08-1.08c.06 0 .12-.01.17-.01 3.31 0 6 2.69 6 6 0 2.97-2.17 5.43-5 5.91v2.02c3.95-.49 7-3.85 7-7.93z"/></svg></span>
+                <span class="ico dis" title="Not pushed — nothing to link"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M17 7h-4v1.9h4c1.71 0 3.1 1.39 3.1 3.1 0 1.43-.98 2.63-2.31 2.98l1.46 1.46C20.88 15.61 22 13.95 22 12c0-2.76-2.24-5-5-5zm-1 4h-2.19l2 2H16v-2zM2 4.27l3.11 3.11C3.29 8.12 2 9.91 2 12c0 2.76 2.24 5 5 5h4v-1.9H7c-1.71 0-3.1-1.39-3.1-3.1 0-1.59 1.21-2.9 2.76-3.07L8.73 11H8v2h2.73L13 15.27V17h1.73l4.01 4.01 1.41-1.41L3.41 2.86 2 4.27z"/></svg></span>
+                <span class="ico" title="More actions"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M6 10c-1.1 0-2 .9-2 2s.9 2 2 2 2-.9 2-2-.9-2-2-2zm12 0c-1.1 0-2 .9-2 2s.9 2 2 2 2-.9 2-2-.9-2-2-2zm-6 0c-1.1 0-2 .9-2 2s.9 2 2 2 2-.9 2-2-.9-2-2-2z"/></svg></span>
+              </span></td>
+            </tr>
+          </tbody>
+        </table>
+        <p class="mcap-note">The advertiser + ID isn't shown per row here — it lives in the Push modal's tag list. Row actions, left to right: <strong>copy</strong> · <strong>restart</strong> (disabled unless a transcode is Inactive/Error) · <strong>link / unlink</strong> · <strong>more</strong>.</p>
+      </div>
+    </div>
+  </section>
+
+  <section>
+    <span class="eyebrow">Platform Status</span>
+    <h2>The five states</h2>
+    <div class="chips">
+      <span class="chip"><span class="dot dot--ring d-grey"></span>Not pushed <span class="k">notPushed</span></span>
+      <span class="chip"><span class="dot d-amber"></span>Pushing <span class="k">pushing</span></span>
+      <span class="chip"><span class="dot d-green"></span>Success <span class="k">success</span></span>
+      <span class="chip"><span class="dot d-red"></span>Error <span class="k">error</span></span>
+      <span class="chip"><span class="dot d-grey"></span>Inactive <span class="k">inactive</span></span>
+    </div>
+    <div class="tbl-scroll">
+      <table>
+        <thead><tr><th>State</th><th>Means</th></tr></thead>
+        <tbody>
+          <tr><td><span class="stname"><span class="dot dot--ring d-grey"></span>Not pushed</span></td><td class="desc">Never pushed to a platform — the default for a new tag. Grey <em>ring</em>.</td></tr>
+          <tr><td><span class="stname"><span class="dot d-amber"></span>Pushing</span></td><td class="desc">Push in flight.</td></tr>
+          <tr><td><span class="stname"><span class="dot d-green"></span>Success</span></td><td class="desc">The platform accepted the tag. Chip names the destination — <span class="mono">Success: Nexxen</span> — from the per-tag push target.</td></tr>
+          <tr><td><span class="stname"><span class="dot d-red"></span>Error</span></td><td class="desc">The push failed <strong>or</strong> the platform rejected the tag.</td></tr>
+          <tr><td><span class="stname"><span class="dot d-grey"></span>Inactive</span></td><td class="desc">Was linked, then <strong>unlinked</strong>. The chip keeps the platform — <span class="mono">Inactive: Nexxen</span> — and pushing again relinks it.</td></tr>
+        </tbody>
+      </table>
+    </div>
+    <h3>Unlink / Link toggle</h3>
+    <p>Each distro row has a <strong>link/unlink icon</strong> (right of the transcode restart icon) that reflects state and toggles on click: a <strong>link-on</strong> icon on a Success tag unlinks it → Inactive (target kept); a <strong>link-off</strong> icon on an Inactive/Error tag relinks the remembered platform → Success; disabled on a Not-pushed/Pushing tag. <strong>Both unlink and re-link confirm first</strong> — a platform connection shouldn't change by accident (transcode restart is guarded the same way). Prompts are generic, not platform-specific.</p>
+  </section>
+
+  <section>
+    <span class="eyebrow">In the app</span>
+    <h2>The Push modal</h2>
+    <p class="sec-intro">Pick a platform → its tags auto-select. The advertiser is locked once set — the field is disabled, with a lock icon and a "contact support" tooltip. Uncheck any tags to hold back, then push.</p>
+    <div class="callout note">
+      <span class="eyebrow">The lock is announced before it's set</span>
+      <p>Because the <strong>first push</strong> is what sets the lock, the user is told twice: an inline notice appears under the advertiser field the moment an advertiser is chosen, and the first push raises a confirmation — <em>"Lock this advertiser to the platform?"</em> — spelling out that the advertiser locks to that 3rd-party system <strong>globally within Radius</strong> (every line item, current and future — not just this one) and can't be changed without support. Each platform keeps its own advertiser. The copy is intentionally <strong>generic</strong> so it never has to be generated per-platform.</p>
+    </div>
+    <div class="mock" style="max-width:480px;">
+      <div class="mock-cap"><span class="lts"><i></i><i></i><i></i></span> Modal · Push Tags to Platform</div>
+      <div class="mock-body" style="padding:0;">
+        <div style="display:flex; align-items:center; justify-content:space-between; padding:15px 22px;">
+          <span style="color:#EF0078; font-family:var(--display); font-size:20px; font-weight:600;">Push Tags to Platform</span>
+          <span class="ico" style="width:20px; height:20px;"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M19 6.41 17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z"/></svg></span>
+        </div>
+        <div style="border-top:1px solid #4a4a4a;"></div>
+        <div style="padding:20px 22px;">
+          <p style="color:#cdcdcd; font-size:13px; margin:0 0 18px; line-height:1.55;">A tag can only be pushed to the platform it was built for. Pick a platform and its tags are selected automatically; switch platforms to push a different set.</p>
+          <div class="finput" style="margin-bottom:5px;"><span class="fl">Platform</span><span>Nexxen</span><span class="car">▾</span></div>
+          <p class="fhelp" style="margin-bottom:18px;">Selecting a platform selects its tags</p>
+          <div class="finput ro" style="margin-bottom:5px;"><span class="fl">Advertiser</span><span>Advertiser 3 · 012345</span><span class="ico" title="This advertiser is locked. Contact support to change the advertiser for this platform." style="width:16px;height:16px;"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M18 8h-1V6c0-2.76-2.24-5-5-5S7 3.24 7 6v2H6c-1.1 0-2 .9-2 2v10c0 1.1.9 2 2 2h12c1.1 0 2-.9 2-2V10c0-1.1-.9-2-2-2zM9 6c0-1.66 1.34-3 3-3s3 1.34 3 3v2H9V6zm9 14H6V10h12v10zm-6-3c1.1 0 2-.9 2-2s-.9-2-2-2-2 .9-2 2 .9 2 2 2z"/></svg></span></div>
+          <p class="fhelp" style="margin-bottom:20px;">Locked — this platform uses one advertiser across all of Radius. Contact support to change it.</p>
+          <div class="mbar" style="margin-bottom:8px;">
+            <span class="lockrow"><span class="chk"></span><span style="font-size:14px; color:#fff;">Select all</span></span>
+            <span class="grow"></span>
+            <span style="color:#cdcdcd; font-size:12px;">2 of 2 Nexxen tags selected</span>
+          </div>
+          <div style="border:1px solid #5D5D5D; border-radius:4px; padding:2px 14px;">
+            <div class="chkrow">
+              <span class="lockrow"><span class="chk"></span><span style="color:#fff;">RedBull_Q1</span></span>
+              <span style="text-align:right; line-height:1.4;"><span style="color:#cdcdcd; font-size:12px;">Nexxen · Success</span><br><span style="color:rgba(255,255,255,0.42); font-size:11px;">Advertiser 3 · 012345</span></span>
+            </div>
+            <div class="chkrow">
+              <span class="lockrow"><span class="chk"></span><span style="color:#fff;">RedBull_Q2</span></span>
+              <span style="color:#cdcdcd; font-size:12px;">Nexxen · Not pushed</span>
+            </div>
+            <div class="chkrow">
+              <span class="lockrow"><span class="chk off"></span><span style="color:rgba(255,255,255,0.42);">TTD_Promo</span></span>
+              <span style="color:rgba(255,255,255,0.42); font-size:12px;">The Trade Desk · Not pushed</span>
+            </div>
+          </div>
+        </div>
+        <div style="border-top:1px solid #4a4a4a;"></div>
+        <div class="mbar" style="padding:11px 18px;">
+          <span class="mbtn text">Cancel</span><span class="grow"></span><span class="mbtn text">Push 2 Tags</span>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <section>
+    <span class="eyebrow">Scoping the real build</span>
+    <h2>Prototype vs. production</h2>
+    <div class="split">
+      <div class="proto">
+        <h4>In the prototype</h4>
+        <ul>
+          <li>Advertiser lists are mocked (a fixed set per platform) with simulated latency.</li>
+          <li>Pushing is optimistic — every push lands Success; nothing leaves the browser.</li>
+          <li>Error/rejection is shown only via the <span class="mono">⋯</span> "Set platform status" affordance.</li>
+          <li>Only the last push target + status is kept per tag.</li>
+        </ul>
+      </div>
+      <div class="prod">
+        <h4>For production</h4>
+        <ul>
+          <li>Real per-platform advertiser API (each platform authenticated independently).</li>
+          <li>Real push API returning success / error / rejection — the UI already models the transitions.</li>
+          <li>Surface rejection reasons and a retry path on Error.</li>
+          <li>Persist push history (platform, advertiser, timestamp, outcome).</li>
+        </ul>
+      </div>
+    </div>
+  </section>
+
+  <section>
+    <span class="eyebrow">For the build team</span>
+    <h2>Implementation map</h2>
+    <p class="sec-intro">Where each piece lives today. All state is one <span class="mono">useReducer</span> in <span class="mono">AppContext.tsx</span>, persisted to localStorage; components call helpers off <span class="mono">useApp()</span>, never <span class="mono">dispatch</span> directly. Domain logic in <span class="mono">src/lib/</span> is pure.</p>
+    <div class="imap">
+      <div class="row">
+        <div class="lbl">Types · src/types.ts</div>
+        <div class="item"><span class="fn">PlatformStatus</span> = "notPushed" | "pushing" | "success" | "error" | "inactive"</div>
+        <div class="item"><span class="fn">Distro.platformStatus</span> — the per-distro status.</div>
+        <div class="item"><span class="fn">Distro.pushTarget?</span> { platform; advertiser; advertiserId? } — last destination; drives the chip suffix + relink.</div>
+        <div class="item"><span class="fn">AppState.platformAdvertisers</span> — Record&lt;platformId, {id;name;advertiserId}&gt;, the locked advertiser per platform.</div>
+      </div>
+      <div class="row">
+        <div class="lbl">Domain logic (pure)</div>
+        <div class="item"><span class="fn">src/lib/pushTargets.ts</span> — PUSH_PLATFORMS, platformForFamily, PlatformAdvertiser, fetchPlatformAdvertisers (mock async).</div>
+        <div class="item"><span class="fn">src/lib/platformStatus.ts</span> — PLATFORM_STATUS_META, PLATFORM_STATUS_ORDER, DEFAULT_PLATFORM_STATUS.</div>
+      </div>
+      <div class="row">
+        <div class="lbl">State · AppContext.tsx</div>
+        <div class="item"><span class="fn">setDistrosPlatformStatus(ids, status, target?)</span> — bulk-set status + record the target.</div>
+        <div class="item"><span class="fn">rememberPlatformAdvertiser(platformId, advertiser)</span> — sets the locked advertiser (first push only).</div>
+      </div>
+      <div class="row">
+        <div class="lbl">Components</div>
+        <div class="item"><span class="fn">PushTagsDialog.tsx</span> — the dialog: platform-drives-selection, disabled+locked advertiser field, stale-guarded fetch.</div>
+        <div class="item"><span class="fn">DistroTable.tsx</span> — Platform Status column + link/unlink row icon.</div>
+        <div class="item"><span class="fn">DistrosSection.tsx</span> — handlePush, handleUnlinkPlatform, handleRelinkPlatform.</div>
+        <div class="item"><span class="fn">TagEditorDialog.tsx</span> — Add + Push / Save + Push (onAndPush).</div>
+        <div class="item"><span class="fn">StatusChip.tsx</span> — shared dot + label + suffix chip (also used by Transcode Status).</div>
+      </div>
+      <div class="row swaps">
+        <div class="lbl">Backend swap points</div>
+        <div class="item"><span class="fn">fetchPlatformAdvertisers</span> → the real advertiser API (per-platform, independently authed).</div>
+        <div class="item">Optimistic <span class="fn">pushing → success</span> → the real push API returning success / error / rejection.</div>
+        <div class="item">Add <strong>push-history</strong> persistence — today only the last target + status is kept per distro.</div>
+      </div>
+    </div>
+  </section>
+
+  <section>
+    <span class="eyebrow">Still open</span>
+    <h2>Questions for the team</h2>
+    <ul class="bul">
+      <li><strong>Do SSPs use "advertisers," or a different association?</strong> Supply-side may bind to a publisher or seat instead — the second dropdown's label would become platform-dependent, and the API would return the field name alongside the list.</li>
+      <li><strong>Should transcode state gate a push?</strong> Right now any tag is pushable regardless of transcode status. Should a non-Live tag be blocked or warned first?</li>
+      <li><strong>Re-push semantics.</strong> What happens when an already-Successful tag is pushed again — overwrite, version, or no-op?</li>
+    </ul>
+  </section>
+
+  <section>
+    <span class="eyebrow">Try it</span>
+    <h2>Walkthrough</h2>
+    <div class="steps">
+      <div class="step"><h4>Add distribution tags</h4><p>Distributions → <em>+ Add Distribution Tag</em>, choosing the Nexxen or TTD tab. Each appears with a <span class="mono">Not pushed</span> Platform Status.</p></div>
+      <div class="step"><h4>Add + Push</h4><p>While adding a Nexxen tag, click <strong>Add + Push</strong>. The dialog opens with the platform locked to Nexxen and the new tag pre-selected; pick an advertiser and push.</p></div>
+      <div class="step"><h4>Platform drives the selection</h4><p>With a mix of tags, open <em>Push Tags to Platform</em>, pick Nexxen → all Nexxen tags auto-select (TTD disabled) → push; then pick The Trade Desk → the selection swaps → push those.</p></div>
+      <div class="step"><h4>Push just some</h4><p>After picking a platform, uncheck any of its tags to hold them back before pushing.</p></div>
+      <div class="step"><h4>Show a rejection</h4><p>Use a row's <span class="mono">⋯</span> menu to force <strong>Error</strong> on the platform status.</p></div>
+    </div>
+  </section>
+
+  <section>
+    <span class="eyebrow">Known limits</span>
+    <h2>Not-yet-built</h2>
+    <ul class="bul">
+      <li>No backend or real auth; all data is in the browser and resets if localStorage is cleared.</li>
+      <li>Advertiser lookup and push are simulated (timers + mock data); no request leaves the browser.</li>
+      <li>No push history and no retry / rejection-reason UI yet — both flagged as production work above.</li>
+    </ul>
+  </section>
+
+  <footer>
+    Radius Ad-Tags prototype · 3rd-Party Push hand-off · living document, as of 2026-08-13.<br>
+    Companion: the <strong>Transcoding</strong> hand-off. Source of truth: <span class="mono">docs/handoff-3rd-party-push.md</span> in the repo.
+  </footer>
+</div>

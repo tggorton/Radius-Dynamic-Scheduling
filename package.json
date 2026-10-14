@@ -1,10 +1,10 @@
 {
-  "name": "radius-adtags-prototype",
+  "name": "radius-dynamic-scheduling",
   "private": true,
   "version": "0.1.0",
   "type": "module",
   "scripts": {
-    "dev": "vite --port 5174 --strictPort",
+    "dev": "vite --port 5176 --strictPort",
     "build": "tsc --noEmit && vite build",
     "preview": "vite preview"
   },

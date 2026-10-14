@@ -4,10 +4,13 @@ import {
   useEffect,
   useMemo,
   useReducer,
+  useState,
   type ReactNode,
 } from "react";
 import type {
+  AdminStatus,
   AppState,
+  Creative,
   CustomKeyValue,
   Distro,
   DistroStatus,
@@ -21,9 +24,25 @@ import type {
   Template,
   TranscodePreset,
   TranscodingConfig,
+  Schedule,
+  View,
+  Campaign,
+  ExperienceMode,
+  LineItem,
+  Workspace,
 } from "../types";
 import type { PlatformAdvertiser } from "../lib/pushTargets";
 import { seedRegions, seedTemplates } from "./seedData";
+import {
+  SEED_CREATIVES,
+  SEED_LINE_ITEMS,
+  emptyDemoWorkspace,
+  sampleWorkspace,
+} from "./seedScheduling";
+import { resolveImmediate } from "../lib/schedule";
+import { childDefaultSchedule, migrateSchedule } from "../lib/scheduleInheritance";
+import type { LibraryCreative } from "../lib/creativeLibrary";
+import { newCampaign, newLineItem, nextId } from "../lib/newEntities";
 import { SEED_PARAMS_CATALOG } from "../lib/paramCatalog";
 import { DEFAULT_DISTRO_STATUS } from "../lib/distroStatus";
 import { DEFAULT_PLATFORM_STATUS } from "../lib/platformStatus";
@@ -35,7 +54,7 @@ import {
   ensureTranscodePresets,
 } from "../lib/transcodePresets";
 
-const STORAGE_KEY = "radius.adtags.v1";
+const STORAGE_KEY = "radius.scheduling.v1";
 
 const initialState: AppState = {
   role: "user",
@@ -47,7 +66,14 @@ const initialState: AppState = {
   transcoding: DEFAULT_TRANSCODINGS,
   transcodePresets: SEED_TRANSCODE_PRESETS,
   platformAdvertisers: {},
+  ...sampleWorkspace(),
+  mode: "sample",
+  parkedWorkspace: emptyDemoWorkspace(),
+  clockOffsetMs: 0,
 };
+
+/** How often computed run states re-evaluate against the (simulated) clock. */
+const CLOCK_TICK_MS = 15_000;
 
 type Action =
   | { type: "hydrate"; state: AppState }
@@ -84,7 +110,22 @@ type Action =
   | { type: "deleteParam"; family: ParamFamilyKey; paramId: string }
   | { type: "addRegion"; region: RegionDef }
   | { type: "updateRegion"; region: RegionDef }
-  | { type: "deleteRegion"; id: string };
+  | { type: "deleteRegion"; id: string }
+  | { type: "setView"; view: View }
+  | { type: "setClockOffset"; offsetMs: number }
+  | { type: "setCampaignSchedule"; id: number; schedule: Schedule }
+  | { type: "setCampaignStatus"; id: number; status: AdminStatus; now: number }
+  | { type: "addCampaign"; campaign: Campaign }
+  | { type: "addLineItem"; lineItem: LineItem }
+  | { type: "setMode"; mode: ExperienceMode }
+  | { type: "resetDemo" }
+  | { type: "setLineItemSchedule"; id: number; schedule: Schedule }
+  | { type: "setLineItemStatus"; id: number; status: AdminStatus; now: number }
+  | { type: "setCreativeSchedule"; id: number; schedule: Schedule }
+  | { type: "setCreativeWeight"; id: number; weight: number | null }
+  | { type: "resetCreativeWeights"; lineItemId: number }
+  | { type: "addCreatives"; lineItemId: number; items: LibraryCreative[]; now: number }
+  | { type: "removeCreative"; id: number };
 
 const reducer = (state: AppState, action: Action): AppState => {
   switch (action.type) {
@@ -240,6 +281,121 @@ const reducer = (state: AppState, action: Action): AppState => {
         ...state,
         regions: state.regions.filter((r) => r.id !== action.id),
       };
+    case "setView":
+      return { ...state, view: action.view };
+    case "setClockOffset":
+      return { ...state, clockOffsetMs: action.offsetMs };
+    case "setCampaignSchedule": {
+      const campaign = state.campaigns.find((c) => c.id === action.id);
+      if (!campaign) return state;
+      // Children's stored schedules are untouched; bounds they inherit follow
+      // this one live (D32).
+      const next = { ...campaign, schedule: action.schedule };
+      return {
+        ...state,
+        campaigns: state.campaigns.map((c) => (c.id === next.id ? next : c)),
+      };
+    }
+    case "setCampaignStatus":
+      // Activating resolves a still-pending Immediate start (PRD R2, D14).
+      return {
+        ...state,
+        campaigns: state.campaigns.map((c) =>
+          c.id === action.id
+            ? {
+                ...c,
+                status: action.status,
+                schedule: resolveImmediate(c.schedule, action.status, action.now),
+              }
+            : c,
+        ),
+      };
+    case "addCampaign":
+      return {
+        ...state,
+        campaigns: [...state.campaigns, action.campaign],
+        view: { page: "campaign", campaignId: action.campaign.id },
+      };
+    case "addLineItem":
+      return {
+        ...state,
+        lineItems: [...state.lineItems, action.lineItem],
+        view: { page: "lineItem", lineItemId: action.lineItem.id },
+      };
+    case "setMode": {
+      if (action.mode === state.mode) return state;
+      // Park the active workspace and bring the other one back, untouched.
+      const parked: Workspace = {
+        campaigns: state.campaigns,
+        lineItems: state.lineItems,
+        creatives: state.creatives,
+        view: state.view,
+      };
+      return { ...state, ...state.parkedWorkspace, mode: action.mode, parkedWorkspace: parked };
+    }
+    case "resetDemo":
+      return state.mode === "demo"
+        ? { ...state, ...emptyDemoWorkspace() }
+        : { ...state, parkedWorkspace: emptyDemoWorkspace() };
+    case "setLineItemSchedule":
+      return {
+        ...state,
+        lineItems: state.lineItems.map((li) =>
+          li.id === action.id ? { ...li, schedule: action.schedule } : li,
+        ),
+      };
+    case "setLineItemStatus":
+      return {
+        ...state,
+        lineItems: state.lineItems.map((li) =>
+          li.id === action.id
+            ? {
+                ...li,
+                status: action.status,
+                schedule: resolveImmediate(li.schedule, action.status, action.now),
+              }
+            : li,
+        ),
+      };
+    case "setCreativeSchedule":
+      return {
+        ...state,
+        creatives: state.creatives.map((c) =>
+          c.id === action.id ? { ...c, schedule: action.schedule } : c,
+        ),
+      };
+    case "setCreativeWeight":
+      return {
+        ...state,
+        creatives: state.creatives.map((c) =>
+          c.id === action.id ? { ...c, customWeight: action.weight } : c,
+        ),
+      };
+    case "resetCreativeWeights":
+      return {
+        ...state,
+        creatives: state.creatives.map((c) =>
+          c.lineItemId === action.lineItemId ? { ...c, customWeight: null } : c,
+        ),
+      };
+    case "addCreatives": {
+      const lineItem = state.lineItems.find((li) => li.id === action.lineItemId);
+      if (!lineItem) return state;
+      const added: Creative[] = action.items
+        .filter((item) => !state.creatives.some((c) => c.id === item.id))
+        .map((item) => ({
+          id: item.id,
+          lineItemId: lineItem.id,
+          name: item.name,
+          status: "active",
+          // Start and end left empty: it follows the line item's timeline (D32).
+          schedule: childDefaultSchedule(lineItem.schedule.timeZone),
+          customWeight: null,
+        }));
+      return { ...state, creatives: [...state.creatives, ...added] };
+    }
+    case "removeCreative":
+      return { ...state, creatives: state.creatives.filter((c) => c.id !== action.id) };
     default:
       return state;
   }
@@ -279,6 +435,34 @@ interface AppContextValue {
   updateRegion: (region: RegionDef) => void;
   deleteRegion: (id: string) => void;
   nextDistributionId: () => number;
+  /** The current instant, simulated-clock offset applied. Re-evaluates on a
+   *  tick so run states flip without a reload. An absolute instant — never
+   *  interpreted in the browser's zone (D21). */
+  now: number;
+  setView: (view: View) => void;
+  setClockOffset: (offsetMs: number) => void;
+  setCampaignSchedule: (id: number, schedule: Schedule) => void;
+  setCampaignStatus: (id: number, status: AdminStatus) => void;
+  /** Create Campaign: adds it under the advertiser and opens it. */
+  createCampaign: (fields: { name: string; vertical: string; lineOfBusiness: string }) => void;
+  /** Create Line Item: adds it to the campaign and opens it. */
+  createLineItem: (
+    campaignId: number,
+    fields: { name: string; mediaType: string; rateType: string },
+  ) => void;
+  /** Prototype-only: switch between the preset sample and the build-it-yourself demo. */
+  setMode: (mode: ExperienceMode) => void;
+  /** Prototype-only: empty the demo workspace back to the advertiser page. */
+  resetDemo: () => void;
+  setLineItemSchedule: (id: number, schedule: Schedule) => void;
+  setLineItemStatus: (id: number, status: AdminStatus) => void;
+  setCreativeSchedule: (id: number, schedule: Schedule) => void;
+  /** A typed weight (0–100), or null to go back to the auto split (D28). */
+  setCreativeWeight: (id: number, weight: number | null) => void;
+  resetCreativeWeights: (lineItemId: number) => void;
+  /** Attach library creatives to a line item, Immediate → Indefinite in its zone. */
+  addCreatives: (lineItemId: number, items: LibraryCreative[]) => void;
+  removeCreative: (id: number) => void;
 }
 
 const AppContext = createContext<AppContextValue | undefined>(undefined);
@@ -373,6 +557,65 @@ const ensureRegions = (raw: RegionDef[] | undefined): RegionDef[] => {
   return raw;
 };
 
+/**
+ * A persisted view pointing at something that no longer exists falls back to
+ * the workspace's default. A pre-multi-campaign `{ page: "campaign" }` (no
+ * id) opens the first campaign.
+ */
+const ensureView = (view: View | undefined, ws: Omit<Workspace, "view">, fallback: View): View => {
+  const exists = (v: View) =>
+    v.page === "advertiser" ||
+    (v.page === "campaign" && ws.campaigns.some((c) => c.id === v.campaignId)) ||
+    (v.page === "lineItem" && ws.lineItems.some((li) => li.id === v.lineItemId));
+  if (view?.page === "campaign" && view.campaignId === undefined && ws.campaigns[0]) {
+    return { page: "campaign", campaignId: ws.campaigns[0].id };
+  }
+  if (view && exists(view)) return view;
+  return exists(fallback) ? fallback : { page: "advertiser" };
+};
+
+/** A saved workspace, possibly from before multi-campaign (one `campaign`). */
+type RawWorkspace = Partial<Workspace> & { campaign?: Campaign };
+
+/**
+ * Scheduling migrations. Older saves had one `campaign` (it becomes the sample
+ * workspace's only campaign). D32 replaced `timeZoneSource` and the D29
+ * `unset` bounds (see `migrateSchedule`).
+ * Creatives arrived after line items, so older sample saves get the seeded
+ * creatives. A workspace with nothing saved gets `fallback`.
+ */
+const migrateWorkspace = (raw: RawWorkspace | undefined, fallback: Workspace): Workspace => {
+  if (!raw || (!raw.campaigns && !raw.campaign)) return fallback;
+  const legacy = !raw.campaigns;
+  const campaigns = (raw.campaigns ?? [raw.campaign as Campaign]).map((c) => ({
+    ...c,
+    schedule: migrateSchedule(c.schedule, true),
+  }));
+  const lineItems = (legacy && !raw.lineItems?.length ? SEED_LINE_ITEMS : raw.lineItems ?? []).map(
+    (li) => ({ ...li, schedule: migrateSchedule(li.schedule, false) }),
+  );
+  const creatives = (legacy && !raw.creatives?.length ? SEED_CREATIVES : raw.creatives ?? [])
+    .filter((c) => lineItems.some((li) => li.id === c.lineItemId))
+    .map((c) => ({
+      ...c,
+      customWeight: c.customWeight ?? null,
+      schedule: migrateSchedule(c.schedule, false),
+    }));
+  const ws = { campaigns, lineItems, creatives };
+  return { ...ws, view: ensureView(raw.view, ws, fallback.view) };
+};
+
+/** Active + parked workspaces; whichever isn't saved gets its mode's default. */
+const migrateScheduling = (
+  parsed: Partial<AppState> & { campaign?: Campaign },
+): Pick<AppState, "campaigns" | "lineItems" | "creatives" | "view" | "mode" | "parkedWorkspace"> => {
+  const mode: ExperienceMode = parsed.mode === "demo" ? "demo" : "sample";
+  const fallbackFor = (m: ExperienceMode) => (m === "sample" ? sampleWorkspace() : emptyDemoWorkspace());
+  const active = migrateWorkspace(parsed, fallbackFor(mode));
+  const parked = migrateWorkspace(parsed.parkedWorkspace, fallbackFor(mode === "sample" ? "demo" : "sample"));
+  return { ...active, mode, parkedWorkspace: parked };
+};
+
 const loadFromStorage = (): AppState | null => {
   try {
     const raw = localStorage.getItem(STORAGE_KEY);
@@ -399,6 +642,9 @@ const loadFromStorage = (): AppState | null => {
       transcoding,
       transcodePresets: ensureTranscodePresets(parsed.transcodePresets),
       platformAdvertisers: parsed.platformAdvertisers ?? {},
+      // Scheduling state arrived with this project; older saves get the seed.
+      ...migrateScheduling(parsed),
+      clockOffsetMs: parsed.clockOffsetMs ?? 0,
     };
   } catch {
     return null;
@@ -414,6 +660,13 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
   useEffect(() => {
     localStorage.setItem(STORAGE_KEY, JSON.stringify(state));
   }, [state]);
+
+  const [realNow, setRealNow] = useState(() => Date.now());
+  useEffect(() => {
+    const id = window.setInterval(() => setRealNow(Date.now()), CLOCK_TICK_MS);
+    return () => window.clearInterval(id);
+  }, []);
+  const now = realNow + state.clockOffsetMs;
 
   const value = useMemo<AppContextValue>(
     () => ({
@@ -453,8 +706,51 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
       updateRegion: (region) => dispatch({ type: "updateRegion", region }),
       deleteRegion: (id) => dispatch({ type: "deleteRegion", id }),
       nextDistributionId: () => state.nextDistributionId,
+      now,
+      setView: (view) => dispatch({ type: "setView", view }),
+      setClockOffset: (offsetMs) => {
+        // Re-anchor on the real clock so a jump lands exactly where expected.
+        setRealNow(Date.now());
+        dispatch({ type: "setClockOffset", offsetMs });
+      },
+      setCampaignSchedule: (id, schedule) =>
+        dispatch({ type: "setCampaignSchedule", id, schedule }),
+      setCampaignStatus: (id, status) =>
+        dispatch({ type: "setCampaignStatus", id, status, now }),
+      createCampaign: (fields) => {
+        // Ids continue above both workspaces, so a switch never collides.
+        const id = nextId(
+          [...state.campaigns, ...state.parkedWorkspace.campaigns].map((c) => c.id),
+          3876,
+        );
+        dispatch({ type: "addCampaign", campaign: newCampaign(id, fields, now) });
+      },
+      createLineItem: (campaignId, fields) => {
+        const campaign = state.campaigns.find((c) => c.id === campaignId);
+        if (!campaign) return;
+        const id = nextId(
+          [...state.lineItems, ...state.parkedWorkspace.lineItems].map((li) => li.id),
+          23255,
+        );
+        dispatch({ type: "addLineItem", lineItem: newLineItem(id, campaign, fields) });
+      },
+      setMode: (mode) => dispatch({ type: "setMode", mode }),
+      resetDemo: () => dispatch({ type: "resetDemo" }),
+      setLineItemSchedule: (id, schedule) =>
+        dispatch({ type: "setLineItemSchedule", id, schedule }),
+      setLineItemStatus: (id, status) =>
+        dispatch({ type: "setLineItemStatus", id, status, now }),
+      setCreativeSchedule: (id, schedule) =>
+        dispatch({ type: "setCreativeSchedule", id, schedule }),
+      setCreativeWeight: (id, weight) =>
+        dispatch({ type: "setCreativeWeight", id, weight }),
+      resetCreativeWeights: (lineItemId) =>
+        dispatch({ type: "resetCreativeWeights", lineItemId }),
+      addCreatives: (lineItemId, items) =>
+        dispatch({ type: "addCreatives", lineItemId, items, now }),
+      removeCreative: (id) => dispatch({ type: "removeCreative", id }),
     }),
-    [state],
+    [state, now],
   );
 
   return <AppContext.Provider value={value}>{children}</AppContext.Provider>;
