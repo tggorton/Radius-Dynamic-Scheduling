@@ -28,6 +28,7 @@ import { useApp } from "../state/AppContext";
 import { DialogHeader } from "./DialogHeader";
 import { TimeZonePicker } from "./TimeZonePicker";
 import { ScheduleDateField, type DatePreset } from "./ScheduleDateField";
+import { ScheduleTimeField } from "./ScheduleTimeField";
 import { ScheduleWarningList } from "./ScheduleWarningList";
 import { useConfirm } from "./ConfirmDialog";
 
@@ -295,15 +296,11 @@ export const ScheduleEditorDialog = ({
             }
           />
           {mode === "specific" ? (
-            <TextField
-              type="time"
+            <ScheduleTimeField
               label={`${label} time`}
-              size="small"
               value={time}
-              onChange={(e) => set(which === "start" ? { startTime: e.target.value } : { endTime: e.target.value })}
-              InputLabelProps={{ shrink: true }}
+              onChange={(t) => set(which === "start" ? { startTime: t } : { endTime: t })}
               error={problem?.error}
-              sx={{ flex: 1, "& input": { colorScheme: "dark" } }}
             />
           ) : (
             <TextField label={`${label} time`} size="small" value="—" disabled InputLabelProps={{ shrink: true }} sx={{ flex: 1 }} />

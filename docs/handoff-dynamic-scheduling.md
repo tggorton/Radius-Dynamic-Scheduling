@@ -210,6 +210,17 @@ save without asking. Removing a creative also confirms.
     value shown, then Immediate / Indefinite.
 - **Specific dates:** picking a calendar day makes the bound specific and requires a time.
   A picked date has an **×** to clear it back to the default.
+- **Time field** (replaces the browser's native time picker, whose scrolling columns loop
+  endlessly and are easy to overshoot):
+  - **Click** to open a plain list: every 15 minutes, 12:00 AM to 11:45 PM, plus **11:59 PM**
+    for end-of-day ends. The list stops at both ends (no looping), opens scrolled to the
+    current time, and narrows as you type.
+  - **Type** any time, read on Tab / Enter / leaving the field: `9:30 PM`, `930pm`, `9:30p`.
+    **24-hour input is converted to the 12-hour display:** `21:30` → 9:30 PM, `0745` →
+    7:45 AM, `00:00` → 12:00 AM, `17` → 5:00 PM.
+  - Minutes not in the list (e.g. 9:07 PM) are typed. Unreadable input (`25:00`) shows "Enter
+    a time like 9:30 AM or 21:30." and isn't saved.
+  - Only wall-clock text passes through it, so the browser's timezone never applies (D21).
 - **Live warnings, D20 confirmation, and a "Schedule saved for {name}" message.**
 - Opened from **Edit Schedule** in a details panel, or the **pencil in any table's Schedule
   column**. A line item's schedule can be edited from the campaign view, and a campaign's
@@ -259,7 +270,7 @@ Weighted Creatives has no Status column: production has none, and Run State cove
 
 > **Engineers: the full test guide is [`TESTING.md`](TESTING.md).** It covers how the modes
 > and clock work underneath, every seeded item with its expected Run State, weight, and
-> warnings at three reference dates, 16 step-by-step scenarios with expected results,
+> warnings at three reference dates, 17 step-by-step scenarios with expected results,
 > reset options, and gotchas.
 
 The top bar reads **Demo clock | Preset sample ⇄ Demo ↻**. None of these exist in
@@ -358,11 +369,12 @@ now* above.**
 | Hierarchy wiring, roll-ups, coverage rule, D20 impact | [`../src/lib/hierarchy.ts`](../src/lib/hierarchy.ts) |
 | Run State labels / colors / tooltips | [`../src/lib/runningStatus.ts`](../src/lib/runningStatus.ts) |
 | Weighting among Serving creatives | [`../src/lib/scheduleWeights.ts`](../src/lib/scheduleWeights.ts) |
+| Time field parsing / formatting and the pick list | [`../src/lib/scheduleTime.ts`](../src/lib/scheduleTime.ts), [`ScheduleTimeField`](../src/components/ScheduleTimeField.tsx) |
 | Timezone catalog; date-dropdown month grid | [`../src/lib/timezones.ts`](../src/lib/timezones.ts), [`../src/lib/scheduleCalendar.ts`](../src/lib/scheduleCalendar.ts) |
 | New campaign / line item builders and form options; creative library | [`../src/lib/newEntities.ts`](../src/lib/newEntities.ts), [`../src/lib/creativeLibrary.ts`](../src/lib/creativeLibrary.ts) |
 | State, actions, Preset sample / Demo workspaces, migrations; seed data | [`../src/state/AppContext.tsx`](../src/state/AppContext.tsx), [`../src/state/seedScheduling.ts`](../src/state/seedScheduling.ts) |
 | Pages | [`CurrentPage`](../src/components/CurrentPage.tsx) → [`AdvertiserPage`](../src/components/AdvertiserPage.tsx) / [`CampaignPage`](../src/components/CampaignPage.tsx) / [`LineItemPage`](../src/components/LineItemPage.tsx); [`ParentMenuButton`](../src/components/ParentMenuButton.tsx) |
-| Schedule UI | [`ScheduleEditorDialog`](../src/components/ScheduleEditorDialog.tsx), [`ScheduleDateField`](../src/components/ScheduleDateField.tsx), [`TimeZonePicker`](../src/components/TimeZonePicker.tsx), [`ScheduleSummary`](../src/components/ScheduleSummary.tsx), [`ScheduleCell`](../src/components/ScheduleCell.tsx), [`RunningStateChip`](../src/components/RunningStateChip.tsx), [`ScheduleWarningIcon`](../src/components/ScheduleWarningIcon.tsx), [`ScheduleWarningList`](../src/components/ScheduleWarningList.tsx), [`AdminStatusField`](../src/components/AdminStatusField.tsx) |
+| Schedule UI | [`ScheduleEditorDialog`](../src/components/ScheduleEditorDialog.tsx), [`ScheduleDateField`](../src/components/ScheduleDateField.tsx), [`ScheduleTimeField`](../src/components/ScheduleTimeField.tsx), [`TimeZonePicker`](../src/components/TimeZonePicker.tsx), [`ScheduleSummary`](../src/components/ScheduleSummary.tsx), [`ScheduleCell`](../src/components/ScheduleCell.tsx), [`RunningStateChip`](../src/components/RunningStateChip.tsx), [`ScheduleWarningIcon`](../src/components/ScheduleWarningIcon.tsx), [`ScheduleWarningList`](../src/components/ScheduleWarningList.tsx), [`AdminStatusField`](../src/components/AdminStatusField.tsx) |
 | Tables and panels | [`CampaignDetails`](../src/components/CampaignDetails.tsx), [`CampaignLineItemsTable`](../src/components/CampaignLineItemsTable.tsx), [`LineItemDetails`](../src/components/LineItemDetails.tsx), [`CreativesSection`](../src/components/CreativesSection.tsx), [`CreativeWeightField`](../src/components/CreativeWeightField.tsx) |
 | Create flows | [`CreateCampaignDialog`](../src/components/CreateCampaignDialog.tsx), [`CreateLineItemDialog`](../src/components/CreateLineItemDialog.tsx), [`AddCreativesDialog`](../src/components/AddCreativesDialog.tsx) |
 | Prototype controls | [`PageTopBar`](../src/components/PageTopBar.tsx), [`SimulatedClockControl`](../src/components/SimulatedClockControl.tsx) |
@@ -382,6 +394,11 @@ Preset sample / Demo toggle, and the creative library are prototype stand-ins.
 | 7 Hand-off: this doc, Obsidian note, visual Artifact | ✅ (2026-10-15) |
 
 ## Changelog
+
+- **2026-10-16**: **Time field replaced.** The native time input (looping scroll columns) is
+  now `ScheduleTimeField`: a finite list (15-minute steps + 11:59 PM, opens at the current
+  time, filters as you type) plus free typing, with 24-hour input converted to the 12-hour
+  display. Parsing lives in `src/lib/scheduleTime.ts`. Testing guide scenario 17 added.
 
 - **2026-10-15**: Added [`TESTING.md`](TESTING.md), an engineer test guide (expected
   results captured from the running app), and linked it from section 10, the docs index,

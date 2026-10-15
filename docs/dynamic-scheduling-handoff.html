@@ -192,7 +192,7 @@
     <p class="lede">Timezone-aware start and end times for campaigns, line items, and creatives, with a live Run State that says whether each one is actually serving. It replaces flipping statuses by hand when flights end or get extended.</p>
     <div class="meta">
       <span class="pill now"><strong>Reviewed with product · feedback applied</strong></span>
-      <span class="pill">as of <strong>2026-10-15</strong></span>
+      <span class="pill">as of <strong>2026-10-16</strong></span>
       <span class="pill">PRD <strong>WEB-1812</strong></span>
       <span class="pill">React · TypeScript · MUI</span>
       <span class="pill"><span class="mono">localhost:5176</span></span>
@@ -219,6 +219,7 @@
         <ul>
           <li>One <strong>schedule editor</strong> for every level, with <strong>Timezone first</strong>.</li>
           <li><strong>Immediate / Indefinite</strong> live in the date dropdowns. Only a specific date needs a time.</li>
+          <li>Times picked from a simple non-looping list, or typed (24-hour input shows as 12-hour).</li>
           <li>Every IANA zone, US zones pinned. Daylight-saving gaps and repeats handled.</li>
           <li>Editable from the details panel or any table's <strong>pencil</strong>.</li>
         </ul>
@@ -323,6 +324,7 @@
           </div>
           <div class="btns"><span class="t">Cancel</span><span class="c">Save Schedule</span></div>
         </div>
+        <p class="mcap-note"><strong>Time fields:</strong> click for a plain list (every 15 minutes, 12:00 AM to 11:45 PM, plus 11:59 PM) that opens at the current time and <strong>stops at both ends</strong>, unlike the browser's looping picker. Or type any time: <span class="mono">930pm</span>, <span class="mono">9:30 PM</span>, or 24-hour <span class="mono">21:30</span>, which displays as 9:30 PM.</p>
         <p class="mcap-note">The open menu is the <strong>End date</strong> dropdown. A campaign's dropdowns list only <strong>Immediate</strong> / <strong>Indefinite</strong>, since it has no parent. Warnings appear live under the fields and never block saving.</p>
       </div>
     </div>
@@ -510,7 +512,7 @@
         </tbody>
       </table>
     </div>
-    <p>The full guide, with every seeded item, all warnings, 16 step-by-step scenarios with expected results, and reset options, is <span class="mono">docs/TESTING.md</span> in the repo.</p>
+    <p>The full guide, with every seeded item, all warnings, 17 step-by-step scenarios with expected results, and reset options, is <span class="mono">docs/TESTING.md</span> in the repo.</p>
     <div class="callout note">
       <span class="eyebrow">Good test passes</span>
       <p><strong>States:</strong> in Preset sample, jump +30 days and back. <strong>Inheritance:</strong> change the campaign's end, and watch following line items and creatives move while ones with their own dates stay put. <strong>Defaults:</strong> in Demo, create a campaign and a line item, and check that the line item reads "From campaign". <strong>Warnings:</strong> give a line item a start before the campaign's, or a different timezone, and check the editor, row icon, and panels.</p>
@@ -585,7 +587,7 @@
   </section>
 
   <footer>
-    Radius prototype · Dynamic Scheduling hand-off · as of 2026-10-15.<br>
+    Radius prototype · Dynamic Scheduling hand-off · as of 2026-10-16.<br>
     Builds on the Radius Ad-Tags prototype (Transcoding, 3rd-Party Push). Source of truth: <span class="mono">docs/handoff-dynamic-scheduling.md</span>.
   </footer>
 </div>

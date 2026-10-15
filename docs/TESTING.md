@@ -138,6 +138,7 @@ should happen.
 | 14 | **Mode isolation** | Sample → change something → toggle Demo → build something → toggle back → **↻** in Demo. | Each mode keeps its own changes and page. Restart clears Demo only; the sample keeps its change. |
 | 15 | **No browser-timezone dependence (D21)** | Note several displayed times → change the computer's timezone (macOS: System Settings → General → Date & Time) → reload. | **Nothing changes.** Every time reads in the item's own zone. |
 | 16 | **Run State tooltips** | Hover any Run State chip. | It shows what the state means plus why, e.g. "Pending start — Active, but its start time hasn't arrived. Starts Nov 20, 2026, 12:00 AM EST." |
+| 17 | **Time field** | Any editor → pick a calendar date → click its time field; scroll the list to the bottom and keep scrolling. Then type `21:30` and press Tab; then `930p` (watch the list); then `25:00` and Tab. | The list holds 12:00 AM … 11:45 PM in 15-minute steps plus 11:59 PM, opens at the current time, and **stops at the end** (no looping). `21:30` displays **9:30 PM**. Typing `930p` narrows the list to 9:30 PM. `25:00` shows "Enter a time like 9:30 AM or 21:30." and isn't saved. |
 
 ## 6. Gotchas
 

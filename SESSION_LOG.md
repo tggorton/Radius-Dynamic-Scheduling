@@ -368,6 +368,16 @@ minor. D29's conflict with R1 is gone (reversed by D32).
   Linked from spec section 10 and the docs index; the Artifact (v2) gained an "under the
   hood" block and the expected-results table.
 
+### 2026-10-16 — Session 7: Time field
+
+- The user found the native time picker's looping scroll columns too easy to overshoot.
+  Replaced it with `ScheduleTimeField`: a finite list (15-minute steps + 11:59 PM) that opens
+  at the current time and filters as you type, plus free typing. Parsing is in
+  `src/lib/scheduleTime.ts`. The user then asked for 24-hour input to show as 12-hour; that
+  already worked (verified `21:30` → 9:30 PM, `0745` → 7:45 AM, `00:00` → 12:00 AM).
+- Updated the spec (editor section, implementation map, changelog), TESTING.md (scenario
+  17), Obsidian, and the Artifact; committed and pushed.
+
 ## Open threads
 
 - **Pick up here:** the user is reviewing at their own pace. Wait for their go-ahead or
