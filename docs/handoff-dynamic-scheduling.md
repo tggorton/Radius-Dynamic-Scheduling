@@ -257,6 +257,11 @@ Weighted Creatives has no Status column: production has none, and Run State cove
 
 ### 10. Testing: Preset sample, Demo, restart, demo clock (prototype-only)
 
+> **Engineers: the full test guide is [`TESTING.md`](TESTING.md).** It covers how the modes
+> and clock work underneath, every seeded item with its expected Run State, weight, and
+> warnings at three reference dates, 16 step-by-step scenarios with expected results,
+> reset options, and gotchas.
+
 The top bar reads **Demo clock | Preset sample ⇄ Demo ↻**. None of these exist in
 production.
 
@@ -377,6 +382,10 @@ Preset sample / Demo toggle, and the creative library are prototype stand-ins.
 | 7 Hand-off: this doc, Obsidian note, visual Artifact | ✅ (2026-10-15) |
 
 ## Changelog
+
+- **2026-10-15**: Added [`TESTING.md`](TESTING.md), an engineer test guide (expected
+  results captured from the running app), and linked it from section 10, the docs index,
+  and the Artifact.
 
 - **2026-10-15**: Published the **visual hand-off Artifact**
   (https://claude.ai/artifact/Sh1bMjimkqC9Waz6FafHXi), built from *How it works now*; a copy

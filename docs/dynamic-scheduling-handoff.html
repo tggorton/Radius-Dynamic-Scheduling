@@ -67,7 +67,7 @@
   ul { margin: 14px 0 0; padding-left: 0; list-style: none; }
   ul.bul li { position: relative; padding-left: 20px; margin-top: 9px; }
   ul.bul li::before { content: ""; position: absolute; left: 3px; top: 10px; width: 6px; height: 6px; border-radius: 50%; background: var(--accent); }
-  code, .mono { font-family: var(--mono); font-size: 0.86em; background: var(--surface-2); border: 1px solid var(--line); border-radius: 5px; padding: 1px 6px; color: var(--ink); }
+  code, .mono { overflow-wrap: anywhere; font-family: var(--mono); font-size: 0.86em; background: var(--surface-2); border: 1px solid var(--line); border-radius: 5px; padding: 1px 6px; color: var(--ink); }
 
   .callout { background: var(--surface); border: 1px solid var(--line); border-left: 3px solid var(--accent); border-radius: var(--radius); padding: 20px 24px; margin-top: 22px; }
   .callout .eyebrow { color: var(--accent); }
@@ -483,6 +483,34 @@
       <li><strong>The preset sample runs on real time.</strong> Its states depend on today's date, so on a later day some line items will have started or ended. Use the demo clock to show a specific moment.</li>
       <li><strong>To reset everything</strong> (both modes and the clock), run this in the browser console: <span class="mono">localStorage.removeItem('radius.scheduling.v1'); location.reload()</span></li>
     </ul>
+    <h3>For engineers: under the hood</h3>
+    <ul class="bul">
+      <li>All state is one JSON object in <span class="mono">localStorage</span> under <span class="mono">radius.scheduling.v1</span>. <span class="mono">state.mode</span> is <span class="mono">sample</span> or <span class="mono">demo</span>. The other mode's campaigns, line items, creatives, and current page sit in <span class="mono">state.parkedWorkspace</span>, and the toggle swaps them.</li>
+      <li>Restart replaces only the Demo workspace. Seeds live in <span class="mono">src/state/seedScheduling.ts</span>.</li>
+      <li>"Now" is the real time plus a saved <span class="mono">clockOffsetMs</span>, re-evaluated every 15 seconds, so the clock applies everywhere and survives reloads.</li>
+      <li><strong>Jump to an exact moment</strong> (browser console, replace the date): <span class="mono">const s = JSON.parse(localStorage.getItem('radius.scheduling.v1')); s.clockOffsetMs = Date.parse('2026-11-05T17:00:00Z') - Date.now(); localStorage.setItem('radius.scheduling.v1', JSON.stringify(s)); location.reload()</span></li>
+    </ul>
+    <h3>Expected results in the preset sample</h3>
+    <p>Captured from the running app after a full reset, at noon ET on each date. ▲ marks an item with a warning.</p>
+    <div class="tbl-scroll">
+      <table>
+        <thead><tr><th>Item</th><th>Oct 15</th><th>Nov 5</th><th>Nov 22</th></tr></thead>
+        <tbody>
+          <tr><td><strong>25095</strong> · Immediate → Indefinite</td><td>Serving ▲</td><td>Serving ▲</td><td>Serving ▲</td></tr>
+          <tr><td>· Hero (typed 60%)</td><td>Serving · 60%</td><td>Serving · 100%</td><td>Serving · 60%</td></tr>
+          <tr><td>· Cutdown (ends Oct 31)</td><td>Serving · 40%</td><td>Expired · –</td><td>Expired · –</td></tr>
+          <tr><td>· Holiday (starts Nov 20)</td><td>Pending · –</td><td>Pending · –</td><td>Serving · 40%</td></tr>
+          <tr><td><strong>25096</strong> · Oct 8 → Nov 29</td><td>Serving</td><td>Serving</td><td>Serving</td></tr>
+          <tr><td>· Kooth_Hulu_30s (follows)</td><td>Serving · 100%</td><td>Serving · 50%</td><td>Serving · 50%</td></tr>
+          <tr><td>· Kooth_Hulu_15s (starts Oct 22)</td><td>Pending · –</td><td>Serving · 50%</td><td>Serving · 50%</td></tr>
+          <tr><td><strong>25097</strong> · Los Angeles zone</td><td>Serving ▲</td><td>Serving ▲</td><td>Serving ▲</td></tr>
+          <tr><td>· Promo (Oct 20 → Nov 15)</td><td>Pending · –</td><td>Serving · 50%</td><td>Expired · –</td></tr>
+          <tr><td><strong>25098</strong> · Sep 1 → Sep 20</td><td>Expired ▲</td><td>Expired ▲</td><td>Expired ▲</td></tr>
+          <tr><td>· DogProbs_Hulu_30s (follows)</td><td>Parent Expired</td><td>Parent Expired</td><td>Parent Expired</td></tr>
+        </tbody>
+      </table>
+    </div>
+    <p>The full guide, with every seeded item, all warnings, 16 step-by-step scenarios with expected results, and reset options, is <span class="mono">docs/TESTING.md</span> in the repo.</p>
     <div class="callout note">
       <span class="eyebrow">Good test passes</span>
       <p><strong>States:</strong> in Preset sample, jump +30 days and back. <strong>Inheritance:</strong> change the campaign's end, and watch following line items and creatives move while ones with their own dates stay put. <strong>Defaults:</strong> in Demo, create a campaign and a line item, and check that the line item reads "From campaign". <strong>Warnings:</strong> give a line item a start before the campaign's, or a different timezone, and check the editor, row icon, and panels.</p>

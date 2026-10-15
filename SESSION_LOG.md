@@ -360,6 +360,14 @@ minor. D29's conflict with R1 is gone (reversed by D32).
   editor, the Schedule column, and Run State chips. A copy is at
   `docs/dynamic-scheduling-handoff.html`.
 
+- **Engineer test guide:** at the user's request, added `docs/TESTING.md`. It covers how
+  the modes and clock work underneath (storage key, `mode` / `parkedWorkspace` swap,
+  restart, clock offset, seeds), reset options including an exact-moment console snippet,
+  every seeded item with expected Run State / weight / warnings at Oct 15, Nov 5, and Nov
+  22 (captured from the running app), 16 scenarios with expected results, and gotchas.
+  Linked from spec section 10 and the docs index; the Artifact (v2) gained an "under the
+  hood" block and the expected-results table.
+
 ## Open threads
 
 - **Pick up here:** the user is reviewing at their own pace. Wait for their go-ahead or
