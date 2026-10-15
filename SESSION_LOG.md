@@ -343,11 +343,28 @@ meanwhile. Built and demoable:
 **PRD flags still open:** D24's remnant (a child's zone defaults to its parent's) is
 minor. D29's conflict with R1 is gone (reversed by D32).
 
+### 2026-10-15 — Session 6: Hand-off consolidated + Artifact
+
+- The user asked whether the docs and Artifact were current, covering the warning logic, the
+  combined Schedule column, states and tooltips, parent/child dependencies, and defaults.
+  Answer: the decisions and changelogs were current, but the spec's descriptive sections
+  were per-pass and partly stale, and the Artifact didn't exist yet.
+- **Spec rewritten** around *How it works now* (772 → ~520 lines). It covers schedules and
+  defaults, dependencies, Run States with tooltip text, every warning rule and where it
+  shows, confirmations, the editor, the tables, weighting, create flows, and a **testing**
+  section (Preset sample / Demo / restart / demo clock, added at the user's mid-turn
+  request). Decisions and changelog kept as history.
+- **Obsidian note rewritten** to match.
+- **Artifact published:** https://claude.ai/artifact/Sh1bMjimkqC9Waz6FafHXi (private). It's
+  in the same visual series as the 3rd-Party Push hand-off, with app-style mockups of the
+  editor, the Schedule column, and Run State chips. A copy is at
+  `docs/dynamic-scheduling-handoff.html`.
+
 ## Open threads
 
 - **Pick up here:** the user is reviewing at their own pace. Wait for their go-ahead or
   more feedback before changing behavior.
-- **Next step 1, finalize the hand-off:**
+- ~~**Next step 1, finalize the hand-off:**~~ Done 2026-10-15 (see Session 6). Original plan:
   - Bring `docs/handoff-dynamic-scheduling.md` up to date as a clean read. The
     *What's built* sections are written per pass and partly superseded; consolidate them
     to the current behavior.
