@@ -170,6 +170,7 @@
   .fld { position: relative; border: 1px solid rgba(255,255,255,0.25); border-radius: 4px; padding: 10px 12px; font-size: 14px; color: #fff; display: flex; justify-content: space-between; align-items: center; gap: 8px; min-width: 0; }
   .fld .fl { position: absolute; top: -8px; left: 9px; padding: 0 5px; background: #2f2f2f; font-size: 11px; color: #cdcdcd; }
   .fld.dim { color: rgba(255,255,255,0.4); }
+  .fld.mut > span:nth-child(2) { color: #a8a8a8; }
   .fld .ic { color: #bdbdbd; font-size: 13px; }
   .frow { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-top: 16px; }
   .fhelp { font-size: 12px; color: #bdbdbd; margin: 6px 2px 0; }
@@ -192,7 +193,7 @@
     <p class="lede">Timezone-aware start and end times for campaigns, line items, and creatives, with a live Run State that says whether each one is actually serving. It replaces flipping statuses by hand when flights end or get extended.</p>
     <div class="meta">
       <span class="pill now"><strong>Reviewed with product · feedback applied</strong></span>
-      <span class="pill">as of <strong>2026-10-16</strong></span>
+      <span class="pill">as of <strong>2026-11-03</strong></span>
       <span class="pill">PRD <strong>WEB-1812</strong></span>
       <span class="pill">React · TypeScript · MUI</span>
       <span class="pill"><span class="mono">localhost:5176</span></span>
@@ -300,7 +301,33 @@
   <section>
     <span class="eyebrow">In the app</span>
     <h2>The schedule editor</h2>
-    <p class="sec-intro">One dialog for every level. For a line item or creative, the date dropdown lists <strong>Same as campaign</strong> first (with the campaign's value), then Immediate or Indefinite, then a calendar. A picked date has an <strong>×</strong> to clear it back to following.</p>
+    <p class="sec-intro">One dialog for every level, shown below for the same example as the diagram above: a campaign with its own dates, a line item that takes its start from the campaign and sets its own end, and a creative that follows the line item. The date dropdowns differ by level. A <strong>campaign</strong> lists only Immediate / Indefinite. A <strong>line item or creative</strong> lists <strong>Same as campaign</strong> (or <em>line item</em>) first, with the parent's value, then Immediate / Indefinite, then a calendar. A picked date has an <strong>×</strong> to clear it back to the default.</p>
+
+    <div class="mock">
+      <div class="mock-cap"><span class="lts"><i></i><i></i><i></i></span> Campaign Schedule — its own dates</div>
+      <div class="mock-body">
+        <div class="dlg">
+          <h5>Campaign Schedule</h5>
+          <div class="fld"><span class="fl">Timezone</span><span>New York — Eastern · UTC−04:00 (EDT)</span><span class="ic">▾</span></div>
+          <p class="fhelp">Dates set here are entered and shown in this zone.</p>
+          <div class="frow">
+            <div class="fld"><span class="fl">Start date</span><span>Oct 1, 2026</span><span class="ic">✕ ▦</span></div>
+            <div class="fld"><span class="fl">Start time</span><span>9:00 AM</span><span class="ic">◷</span></div>
+          </div>
+          <div class="menu" aria-hidden="true">
+            <div>Immediate</div>
+            <div class="cal">‹ October 2026 › — calendar grid (Oct 1 selected)</div>
+          </div>
+          <div class="frow">
+            <div class="fld"><span class="fl">End date</span><span>Dec 31, 2026</span><span class="ic">✕ ▦</span></div>
+            <div class="fld"><span class="fl">End time</span><span>11:59 PM</span><span class="ic">◷</span></div>
+          </div>
+          <div class="btns"><span class="t">Cancel</span><span class="c">Save Schedule</span></div>
+        </div>
+        <p class="mcap-note">The open menu is the <strong>Start date</strong> dropdown. A campaign has no parent, so it lists only <strong>Immediate</strong> (or <strong>Indefinite</strong> for the end) above the calendar. Clearing a date with <strong>×</strong>, or leaving it empty, means Immediate → Indefinite. A new campaign starts that way, in New York.</p>
+      </div>
+    </div>
+
     <div class="mock">
       <div class="mock-cap"><span class="lts"><i></i><i></i><i></i></span> Line Item Schedule — start follows the campaign, end set on the line item</div>
       <div class="mock-body">
@@ -324,10 +351,39 @@
           </div>
           <div class="btns"><span class="t">Cancel</span><span class="c">Save Schedule</span></div>
         </div>
-        <p class="mcap-note"><strong>Time fields:</strong> click for a plain list (every 15 minutes, 12:00 AM to 11:45 PM, plus 11:59 PM) that opens at the current time and <strong>stops at both ends</strong>, unlike the browser's looping picker. Or type any time: <span class="mono">930pm</span>, <span class="mono">9:30 PM</span>, or 24-hour <span class="mono">21:30</span>, which displays as 9:30 PM.</p>
-        <p class="mcap-note">The open menu is the <strong>End date</strong> dropdown. A campaign's dropdowns list only <strong>Immediate</strong> / <strong>Indefinite</strong>, since it has no parent. Warnings appear live under the fields and never block saving.</p>
+        <p class="mcap-note">The open menu is the <strong>End date</strong> dropdown. Picking <strong>Same as campaign</strong> would make the end follow the campaign's Dec 31 again. The start already follows it, so its time field shows "—".</p>
       </div>
     </div>
+
+    <div class="mock">
+      <div class="mock-cap"><span class="lts"><i></i><i></i><i></i></span> Creative Schedule — both dates follow the line item</div>
+      <div class="mock-body">
+        <div class="dlg">
+          <h5>Creative Schedule</h5>
+          <div class="fld mut"><span class="fl">Timezone</span><span>New York — Eastern · UTC−04:00 (EDT)</span><span class="ic">▾</span></div>
+          <p class="fhelp">Applies when you set a date of its own. Until then it follows the line item.</p>
+          <div class="frow">
+            <div class="fld"><span class="fl">Start date</span><span>Same as line item</span><span class="ic">▦</span></div>
+            <div class="fld dim"><span class="fl">Start time</span><span>—</span></div>
+          </div>
+          <div class="menu" aria-hidden="true">
+            <div class="sel">Same as line item<small>Oct 1, 2026, 9:00 AM EDT</small></div>
+            <div>Immediate</div>
+            <div class="cal">‹ October 2026 › — calendar grid</div>
+          </div>
+          <p class="fhelp">From line item: Oct 1, 2026, 9:00 AM EDT</p>
+          <div class="frow">
+            <div class="fld"><span class="fl">End date</span><span>Same as line item</span><span class="ic">▦</span></div>
+            <div class="fld dim"><span class="fl">End time</span><span>—</span></div>
+          </div>
+          <p class="fhelp">From line item: Nov 30, 2026, 11:59 PM EST</p>
+          <div class="btns"><span class="t">Cancel</span><span class="c">Save Schedule</span></div>
+        </div>
+        <p class="mcap-note">The open menu is the <strong>Start date</strong> dropdown. Both dates follow the line item, whose start in turn comes from the campaign, so following chains all the way up. The timezone reads greyed out because the creative has no date of its own yet. New creatives start this way. Picking a calendar day gives the creative its own date (and then needs a time).</p>
+      </div>
+    </div>
+
+    <p><strong>Time fields</strong> (any level): click for a plain list (every 15 minutes, 12:00 AM to 11:45 PM, plus 11:59 PM) that opens at the current time and <strong>stops at both ends</strong>, unlike the browser's looping picker. Or type any time: <span class="mono">930pm</span>, <span class="mono">9:30 PM</span>, or 24-hour <span class="mono">21:30</span>, which displays as 9:30 PM. Warnings appear live under the fields and never block saving.</p>
   </section>
 
   <section>
@@ -587,7 +643,7 @@
   </section>
 
   <footer>
-    Radius prototype · Dynamic Scheduling hand-off · as of 2026-10-16.<br>
+    Radius prototype · Dynamic Scheduling hand-off · as of 2026-11-03.<br>
     Builds on the Radius Ad-Tags prototype (Transcoding, 3rd-Party Push). Source of truth: <span class="mono">docs/handoff-dynamic-scheduling.md</span>.
   </footer>
 </div>
