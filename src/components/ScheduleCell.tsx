@@ -2,17 +2,11 @@ import { Box, IconButton, Stack, Tooltip, Typography } from "@mui/material";
 import EditIcon from "@mui/icons-material/Edit";
 import type { Schedule } from "../types";
 import { formatDateInZone, formatTimeInZone, hasSpecificBound } from "../lib/schedule";
-import { inheritedNote } from "../lib/scheduleInheritance";
 import { describeTimeZone } from "../lib/timezones";
 import { useApp } from "../state/AppContext";
 
 interface Props {
-  /** The schedule as it applies (inherited bounds resolved, D32). */
-  effective: Schedule;
-  /** This entity's own schedule, to say which bounds come from the parent. */
-  own: Schedule;
-  /** "campaign" / "line item" for children; omit at the top level. */
-  parentKind?: string;
+  schedule: Schedule;
   /** Row name, for the pencil's accessible label. */
   name: string;
   onEdit: () => void;
@@ -29,27 +23,22 @@ const boundText = (s: Schedule, which: "start" | "end"): string => {
 /**
  * The Schedule column, shared by every table (campaigns, line items,
  * creatives) so a schedule reads and edits the same way everywhere: start,
- * "→ end", then one caption line — the zone when a specific time is in play,
- * and which bounds come from the parent (D32). The pencil opens that row's
- * schedule editor.
+ * "→ end", then a caption with the zone when a specific time is in play. The
+ * pencil opens that row's schedule editor.
  */
-export const ScheduleCell = ({ effective, own, parentKind, name, onEdit }: Props) => {
+export const ScheduleCell = ({ schedule, name, onEdit }: Props) => {
   const { now } = useApp();
-  const caption = [
-    hasSpecificBound(effective) ? describeTimeZone(effective.timeZone, now) : null,
-    parentKind ? inheritedNote(own, parentKind) : null,
-  ]
-    .filter(Boolean)
-    .join(" · ");
+  // The zone only matters once a specific time is in play (D22).
+  const caption = hasSpecificBound(schedule) ? describeTimeZone(schedule.timeZone, now) : null;
 
   return (
     <Stack direction="row" alignItems="center" justifyContent="space-between" spacing={1}>
       <Box sx={{ minWidth: 0 }}>
         <Typography variant="body2" noWrap>
-          {boundText(effective, "start")}
+          {boundText(schedule, "start")}
         </Typography>
         <Typography variant="body2" noWrap>
-          → {boundText(effective, "end")}
+          → {boundText(schedule, "end")}
         </Typography>
         {caption && (
           <Typography variant="caption" color="text.secondary" noWrap sx={{ display: "block" }}>

@@ -26,7 +26,7 @@ import {
   type YearMonth,
 } from "../lib/scheduleCalendar";
 
-/** A no-date choice listed above the calendar, e.g. "Same as campaign" or "Immediate". */
+/** A no-date choice listed above the calendar: "Immediate" or "Indefinite". */
 export interface DatePreset {
   key: string;
   label: string;
@@ -50,11 +50,10 @@ interface Props {
 }
 
 /**
- * A date field whose dropdown offers the no-date choices (for a campaign,
- * Immediate / Indefinite; for a child, "Same as …" first) above a month
- * calendar, so the mode isn't a separate control. A picked date can be
- * cleared, which returns to the default (first) preset — "leave it empty"
- * (D32). Dates are plain "YYYY-MM-DD" strings; nothing here reads the
+ * A date field whose dropdown offers the no-date choice (Immediate for a
+ * start, Indefinite for an end) above a month calendar, so the mode isn't a
+ * separate control. A picked date can be cleared (×), which returns to that
+ * default. Dates are plain "YYYY-MM-DD" strings; nothing here reads the
  * browser's zone (D21).
  */
 export const ScheduleDateField = ({

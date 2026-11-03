@@ -185,7 +185,6 @@ export interface BoundDisplay {
 }
 
 export const describeStart = (s: Schedule, now: number): BoundDisplay => {
-  if (s.start.kind === "inherit") return { primary: "From parent" };
   if (s.start.kind === "immediate") {
     if (!s.start.resolvedAt) {
       return { primary: "Immediate", secondary: "Starts when activated" };
@@ -204,7 +203,6 @@ export const describeStart = (s: Schedule, now: number): BoundDisplay => {
 };
 
 export const describeEnd = (s: Schedule): BoundDisplay => {
-  if (s.end.kind === "inherit") return { primary: "From parent" };
   if (s.end.kind === "indefinite") {
     return { primary: "Indefinite", secondary: "No end date" };
   }
@@ -215,24 +213,9 @@ export const describeEnd = (s: Schedule): BoundDisplay => {
   };
 };
 
-/**
- * One bound as a single phrase in the schedule's zone: "Immediate",
- * "Indefinite", or "Oct 8, 2026, 12:00 AM EDT". Used for "From campaign: …".
- */
-export const describeBoundLine = (s: Schedule, which: "start" | "end"): string => {
-  const b = which === "start" ? s.start : s.end;
-  if (b.kind === "specific") return formatInZone(Date.parse(b.utc), s.timeZone);
-  if (b.kind === "immediate") return "Immediate";
-  if (b.kind === "indefinite") return "Indefinite";
-  return "From parent";
-};
-
 /* ------------------------------- evaluation ------------------------------ */
 
-/**
- * Start in ms; −∞ for an unresolved Immediate (legacy/unsaved). Pass an
- * *effective* schedule — an unresolved `inherit` reads as unbounded.
- */
+/** Start in ms; −∞ for an unresolved Immediate (legacy/unsaved). */
 export const startMs = (s: Schedule): number =>
   s.start.kind === "specific"
     ? Date.parse(s.start.utc)
@@ -240,7 +223,7 @@ export const startMs = (s: Schedule): number =>
       ? Date.parse(s.start.resolvedAt)
       : Number.NEGATIVE_INFINITY;
 
-/** End in ms; +∞ for Indefinite. The end is exclusive. Pass an effective schedule. */
+/** End in ms; +∞ for Indefinite. The end is exclusive. */
 export const endMs = (s: Schedule): number =>
   s.end.kind === "specific"
     ? Date.parse(s.end.utc)
@@ -250,7 +233,8 @@ export const endMs = (s: Schedule): number =>
 export interface ScheduledEntity {
   /** "Campaign", "Line item" — used in reasons. */
   kind: string;
-  status: AdminStatus;
+  /** Campaigns and line items; creatives have none (PRD R7). */
+  status?: AdminStatus;
   schedule: Schedule;
 }
 

@@ -39,8 +39,8 @@ import {
   emptyDemoWorkspace,
   sampleWorkspace,
 } from "./seedScheduling";
-import { resolveImmediate } from "../lib/schedule";
-import { childDefaultSchedule, migrateSchedule } from "../lib/scheduleInheritance";
+import { defaultSchedule, resolveImmediate } from "../lib/schedule";
+import { migrateSchedule } from "../lib/scheduleMigration";
 import type { LibraryCreative } from "../lib/creativeLibrary";
 import { newCampaign, newLineItem, nextId } from "../lib/newEntities";
 import { SEED_PARAMS_CATALOG } from "../lib/paramCatalog";
@@ -288,8 +288,8 @@ const reducer = (state: AppState, action: Action): AppState => {
     case "setCampaignSchedule": {
       const campaign = state.campaigns.find((c) => c.id === action.id);
       if (!campaign) return state;
-      // Children's stored schedules are untouched; bounds they inherit follow
-      // this one live (D32).
+      // Children's schedules are their own; a campaign edit never changes them
+      // (PRD R1, D33).
       const next = { ...campaign, schedule: action.schedule };
       return {
         ...state,
@@ -387,9 +387,9 @@ const reducer = (state: AppState, action: Action): AppState => {
           id: item.id,
           lineItemId: lineItem.id,
           name: item.name,
-          status: "active",
-          // Start and end left empty: it follows the line item's timeline (D32).
-          schedule: childDefaultSchedule(lineItem.schedule.timeZone),
+          // PRD defaults: Immediate (stamped on add) → Indefinite, New York.
+          // Never the line item's values (PRD R1, D33).
+          schedule: resolveImmediate(defaultSchedule(), "active", action.now),
           customWeight: null,
         }));
       return { ...state, creatives: [...state.creatives, ...added] };
@@ -579,8 +579,9 @@ type RawWorkspace = Partial<Workspace> & { campaign?: Campaign };
 
 /**
  * Scheduling migrations. Older saves had one `campaign` (it becomes the sample
- * workspace's only campaign). D32 replaced `timeZoneSource` and the D29
- * `unset` bounds (see `migrateSchedule`).
+ * workspace's only campaign). Bounds from earlier builds (`unset`, `inherit`)
+ * and `timeZoneSource` are converted by `migrateSchedule`; creatives lose the
+ * administrative status they no longer have (PRD R7).
  * Creatives arrived after line items, so older sample saves get the seeded
  * creatives. A workspace with nothing saved gets `fallback`.
  */
@@ -589,17 +590,23 @@ const migrateWorkspace = (raw: RawWorkspace | undefined, fallback: Workspace): W
   const legacy = !raw.campaigns;
   const campaigns = (raw.campaigns ?? [raw.campaign as Campaign]).map((c) => ({
     ...c,
-    schedule: migrateSchedule(c.schedule, true),
+    schedule: migrateSchedule(c.schedule, null),
   }));
+  const campaignSchedule = (id: number) => campaigns.find((c) => c.id === id)?.schedule ?? null;
   const lineItems = (legacy && !raw.lineItems?.length ? SEED_LINE_ITEMS : raw.lineItems ?? []).map(
-    (li) => ({ ...li, schedule: migrateSchedule(li.schedule, false) }),
+    (li) => ({ ...li, schedule: migrateSchedule(li.schedule, campaignSchedule(li.campaignId)) }),
   );
   const creatives = (legacy && !raw.creatives?.length ? SEED_CREATIVES : raw.creatives ?? [])
     .filter((c) => lineItems.some((li) => li.id === c.lineItemId))
     .map((c) => ({
-      ...c,
+      id: c.id,
+      lineItemId: c.lineItemId,
+      name: c.name,
       customWeight: c.customWeight ?? null,
-      schedule: migrateSchedule(c.schedule, false),
+      schedule: migrateSchedule(
+        c.schedule,
+        lineItems.find((li) => li.id === c.lineItemId)?.schedule ?? null,
+      ),
     }));
   const ws = { campaigns, lineItems, creatives };
   return { ...ws, view: ensureView(raw.view, ws, fallback.view) };
@@ -732,7 +739,7 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
           [...state.lineItems, ...state.parkedWorkspace.lineItems].map((li) => li.id),
           23255,
         );
-        dispatch({ type: "addLineItem", lineItem: newLineItem(id, campaign, fields) });
+        dispatch({ type: "addLineItem", lineItem: newLineItem(id, campaign, fields, now) });
       },
       setMode: (mode) => dispatch({ type: "setMode", mode }),
       resetDemo: () => dispatch({ type: "resetDemo" }),

@@ -378,6 +378,26 @@ minor. D29's conflict with R1 is gone (reversed by D32).
 - Updated the spec (editor section, implementation map, changelog), TESTING.md (scenario
   17), Obsidian, and the Artifact; committed and pushed.
 
+### 2026-11-03 — Session 8: PRD v5 alignment (D33)
+
+- Checked the live PRD (Confluence v5, linked from WEB-1812 / RAD-19; the local PDF copy
+  from Sep 28 is stale). It now says children **must not inherit**. Aligned the prototype
+  (D33, partly supersedes D32):
+  - Every campaign, line item, and creative defaults to Immediate → Indefinite in New York.
+    "Follow the parent" is gone (`scheduleInheritance.ts` deleted), and no parent edit
+    touches a child.
+  - R18: an Immediate start or Indefinite end never raises "Starts before" / "Ends after".
+  - R7: creatives have no administrative status.
+  - Saved data migrates in `src/lib/scheduleMigration.ts`: inherited bounds become copies
+    of the parent's value, so nothing in an existing workspace changes when it serves.
+  - PRD gap flagged, behavior kept: typed weights that total under 100% are scaled up to
+    100%. R24 covers only totals over 100%.
+- Browser-tested: the seed's states and weights match TESTING.md; 25095 shows no warning;
+  editing a line item leaves its creatives unchanged; Demo defaults are NY even under a
+  Sydney campaign; older saved schedules migrate correctly. No console errors.
+- Updated the spec (D33, changelog), TESTING.md, CLAUDE.md, the Obsidian note, and the
+  Artifact (v6, same URL). Committed and pushed over SSH.
+
 ## Open threads
 
 - **Pick up here:** the user is reviewing at their own pace. Wait for their go-ahead or
@@ -402,7 +422,6 @@ minor. D29's conflict with R1 is gone (reversed by D32).
   - Wording for "Immediate · Started …".
   - Pagination parity between tables.
 - **Not built:**
-  - Per-creative Active switch.
   - Shared creatives (D27).
   - Warnings roll-up (the bell).
   - Migration cases (R16–R17).
@@ -410,9 +429,8 @@ minor. D29's conflict with R1 is gone (reversed by D32).
 
 ## Process commitments (carried from the baseline)
 
-- **Pushes are never automatic.** Only on explicit request, using a temporary PAT inline
-  in the push URL (never written to `.git/config`). Verify the config is clean afterwards
-  and revoke the PAT.
+- **Pushes are never automatic.** Only on explicit request. Since 2026-11-03 the Mac pushes
+  over SSH (`origin` = `git@github.com:tggorton/Radius-Dynamic-Scheduling.git`); no PATs.
 - **Port hygiene:** check `lsof -i :5176` before `npm run dev` (strict port).
 - **Plan first** for non-trivial features; just do minor edits and fixes.
 - **Time logging** via the `log-time` skill on request or after meaningful blocks.

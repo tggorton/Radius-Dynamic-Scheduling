@@ -10,7 +10,6 @@ import {
   lineItemImpact,
   lineItemWarnings,
 } from "../lib/hierarchy";
-import { effectiveLineItemSchedule, inheritedBounds } from "../lib/scheduleInheritance";
 import { useApp } from "../state/AppContext";
 import { AdminStatusField } from "./AdminStatusField";
 import { DetailsGrid } from "./DetailsGrid";
@@ -86,11 +85,10 @@ export const LineItemDetails = ({ lineItem, campaign }: Props) => {
       />
       <Divider sx={{ my: 2.5 }} />
       <ScheduleSummary
-        schedule={effectiveLineItemSchedule(lineItem, campaign)}
+        schedule={lineItem.schedule}
         evaluation={evaluation}
         warnings={warnings}
         warningsHeading="Schedule warnings"
-        inherited={{ ...inheritedBounds(lineItem.schedule), parentKind: "campaign" }}
         onEdit={() => setEditOpen(true)}
       />
       <Divider sx={{ my: 2.5 }} />
@@ -116,13 +114,12 @@ export const LineItemDetails = ({ lineItem, campaign }: Props) => {
           const next = { ...lineItem, schedule: draft };
           return [
             ...lineItemWarnings(next, campaign),
-            ...lineItemChildWarnings(next, campaign, creatives),
+            ...lineItemChildWarnings(next, creatives),
           ];
         }}
         impactOf={(draft) =>
           lineItemImpact(lineItem, { ...lineItem, schedule: draft }, campaign, creatives, now)
         }
-        parent={{ kind: "campaign", schedule: campaign.schedule }}
         onSave={(schedule) => setLineItemSchedule(lineItem.id, schedule)}
       />
       <Snackbar

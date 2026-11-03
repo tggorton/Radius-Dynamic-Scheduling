@@ -73,32 +73,32 @@ snippet in section 3 to reproduce them. All rows were captured from the running 
 | · Stratos_Holiday_15s (8423) | Nov 20, 12:00 AM EST → Dec 31, 11:59 PM EST | |
 | · Stratos_Teaser_06s (8424) | Sep 15, 12:00 AM EDT → Sep 30, 11:59 PM EDT | Starts before its line item (9:30 AM) |
 | Line item **25096** (…Community Forums_Hulu) | Oct 8, 12:00 AM EDT → Nov 29, 11:59 PM EST | |
-| · Kooth_Hulu_30s (8431) | **Follows the line item** (start & end) | |
+| · Kooth_Hulu_30s (8431) | Oct 8, 12:00 AM EDT → Nov 29, 11:59 PM EST | Same window as its line item (its own copy) |
 | · Kooth_Hulu_15s (8432) | Oct 22, 12:00 AM EDT → Nov 29, 11:59 PM EST | |
 | Line item **25097** (…Dog Probs_Disney+) | Oct 8, 12:00 AM **PDT** → Nov 29, 11:59 PM **PST** (Los Angeles) | Different zone from the campaign |
-| · DogProbs_Disney_30s (8441) | **Follows the line item** | |
+| · DogProbs_Disney_30s (8441) | Oct 8, 12:00 AM PDT → Nov 29, 11:59 PM PST | Same window as its line item |
 | · DogProbs_Disney_Promo_15s (8442) | Oct 20, 9:00 AM PDT → Nov 15, 11:59 PM PST | |
 | Line item **25098** (…Dog Probs_Hulu) | Sep 1, 12:00 AM EDT → Sep 20, 11:59 PM EDT | Starts before the campaign; already ended |
-| · DogProbs_Hulu_30s (8451) | **Follows the line item** | |
+| · DogProbs_Hulu_30s (8451) | Sep 1, 12:00 AM EDT → Sep 20, 11:59 PM EDT | Same window as its line item |
 
 ### Expected Run State, weight, and warnings
 
 | Item | Oct 15, 2026 | Nov 5, 2026 | Nov 22, 2026 |
 |---|---|---|---|
 | Campaign 4074 | Serving | Serving | Serving |
-| **25095** | Serving ▲ | Serving ▲ | Serving ▲ |
+| **25095** | Serving | Serving | Serving |
 | · Hero | Serving · **60%** | Serving · **100%** | Serving · **60%** |
 | · Cutdown | Serving · **40%** | Schedule Expired · – | Schedule Expired · – |
 | · Holiday | Pending Start · – | Pending Start · – | Serving · **40%** |
 | · Teaser | Schedule Expired · – ▲ | Schedule Expired · – ▲ | Schedule Expired · – ▲ |
 | **25096** | Serving | Serving | Serving |
-| · Kooth_Hulu_30s (follows) | Serving · **100%** | Serving · **50%** | Serving · **50%** |
+| · Kooth_Hulu_30s | Serving · **100%** | Serving · **50%** | Serving · **50%** |
 | · Kooth_Hulu_15s | Pending Start · – | Serving · **50%** | Serving · **50%** |
 | **25097** | Serving ▲ | Serving ▲ | Serving ▲ |
-| · DogProbs_Disney_30s (follows) | Serving · **100%** | Serving · **50%** | Serving · **100%** |
+| · DogProbs_Disney_30s | Serving · **100%** | Serving · **50%** | Serving · **100%** |
 | · DogProbs_Disney_Promo_15s | Pending Start · – | Serving · **50%** | Schedule Expired · – |
 | **25098** | Schedule Expired ▲ | Schedule Expired ▲ | Schedule Expired ▲ |
-| · DogProbs_Hulu_30s (follows) | Parent Expired · – | Parent Expired · – | Parent Expired · – |
+| · DogProbs_Hulu_30s | Parent Expired · – | Parent Expired · – | Parent Expired · – |
 
 After Dec 31, 2026 11:59 PM EST the campaign is **Schedule Expired**, and everything under
 it reads **Parent Expired**.
@@ -107,13 +107,13 @@ it reads **Parent Expired**.
 
 | Where | Message |
 |---|---|
-| 25095 panel + row | "Runs indefinitely, but the campaign ends Dec 31, 2026, 11:59 PM EST. It stops serving then." |
 | 25097 panel + row | "Set to its own timezone, Los Angeles time (PDT); the campaign uses New York time (EDT). The line item starts Oct 8, 2026, 12:00 AM PDT (Oct 8, 2026, 3:00 AM EDT campaign time) and ends Nov 29, 2026, 11:59 PM PST (Nov 30, 2026, 2:59 AM EST campaign time)." |
 | 25098 panel + row | "Starts Sep 1, 2026, 12:00 AM EDT, before the campaign starts (Sep 15, 2026, 12:00 AM EDT). It won't serve until then." |
 | Teaser row (on 25095) | Starts before its line item (Sep 15, 12:00 AM vs. 9:30 AM). |
-| Campaign panel | "3 line items out of sync with this schedule", one line per line item. |
+| Campaign panel | "2 line items out of sync with this schedule", one line per line item. |
 
-Creatives that **follow** their line item never warn: a followed bound always matches.
+25095 (Immediate → Indefinite) has **no** warning even though the campaign ends Dec 31: an
+Immediate start or Indefinite end never triggers "Starts before" / "Ends after" (PRD R18).
 
 ## 5. Scenarios
 
@@ -122,17 +122,17 @@ should happen.
 
 | # | Area | Steps | Expected |
 |---|---|---|---|
-| 1 | **Live inheritance** | Sample → line item **25096** → Edit Schedule → set End to Dec 20, 11:59 PM → Save. | Kooth_Hulu_30s (follows) now ends Dec 20 and reads "Start & end from line item". Kooth_Hulu_15s (own end) still ends Nov 29. |
-| 2 | **Clear to follow** | On 25096, open Kooth_Hulu_15s's editor (row pencil) → **×** on End date → Save. | End date reads "Same as line item" with "From line item: …" under it. The row caption reads "End from line item". |
+| 1 | **No inheritance** | Sample → line item **25096** → Edit Schedule → set End to Dec 20, 11:59 PM → Save. | Its creatives keep their own ends (both still Nov 29). Children never take parent values (PRD R1). |
+| 2 | **Clear a date** | On 25096, open Kooth_Hulu_15s's editor (row pencil) → **×** on End date → Save. | End date returns to **Indefinite** and the time field shows "—". The row reads "→ Indefinite". No "Ends after" warning (Indefinite never triggers it). |
 | 3 | **No cascade** | Campaign page → Edit Schedule → Timezone to Sydney → Save. | Line items with their own dates keep their dates and zones (25096 still EDT, 25097 still PDT). Nothing under the campaign is rewritten. |
-| 4 | **Defaults (Demo)** | Toggle **Demo** → Add New Campaign (any Name / Vertical / Line of Business) → Add New Line Item (any) → Add Weighted Creatives (pick one). | Campaign: Immediate (started now) → Indefinite, New York, **Serving**. Line item: Start & End "From campaign", Serving. Creative: follows the line item, Serving, **100%**. |
+| 4 | **Defaults (Demo)** | Toggle **Demo** → Add New Campaign (any Name / Vertical / Line of Business) → Edit Schedule → Timezone to Sydney → Save → Add New Line Item (any) → Add Weighted Creatives (pick one). | Campaign: Immediate (started now) → Indefinite, Sydney, **Serving**. Line item: Immediate (started now) → Indefinite, **New York** (not Sydney), Serving. Creative: the same, Serving, **100%**, with no status. |
 | 5 | **No time for Immediate / Indefinite** | Any editor → choose Immediate (start) and Indefinite (end). | Time fields show "—" and Save is enabled. Picking a calendar date instead requires a time ("Add a start time. Both are required."). |
 | 6 | **Warning: never overlaps** | Sample → 25098 → set End to Sep 10, 11:59 PM → Save. | A red ● "Never serves: its whole schedule falls outside the campaign's (…)." on the row, in the panel, and live in the editor. |
 | 7 | **Warning: coverage** | Sample at real time → 25096 → trash **Kooth_Hulu_30s** → confirm. | The line item panel shows red ● "The line item is Serving, but none of its 1 creative is. Nothing is delivering." (Kooth_Hulu_15s hasn't started). |
 | 8 | **Warning: timezone** | Any line item with its own dates → Timezone to Chicago → Save. | Amber ▲ "Set to its own timezone, Chicago time (CDT); the campaign uses New York time (EDT)…". |
-| 9 | **Stop-delivery confirm** | Sample → 25096 (Serving) → set End to yesterday → Save. | "Stop delivery now?" lists **This line item** and **Creative Kooth_Hulu_30s** (it follows). Cancel leaves everything unchanged. |
+| 9 | **Stop-delivery confirm** | Sample → 25096 (Serving) → set End to yesterday → Save. | "Stop delivery now?" lists **This line item** and each of its creatives that is Serving (e.g. **Creative Kooth_Hulu_30s**), since they'd become Parent Expired. Cancel leaves everything unchanged. |
 | 10 | **Inactive confirm** | Sample → 25096 → Status pencil → Inactive. | "Stop delivery now?" first. After confirming: the line item is **Inactive**, and its creatives are **Parent Not Serving** ("Line item is set to Inactive."). |
-| 11 | **Extending revives** | Sample → 25098 (Schedule Expired) → set End to Dec 1 → Save. | No confirmation. 25098 is **Serving**, and DogProbs_Hulu_30s (follows) goes from Parent Expired to **Serving**. |
+| 11 | **Extending revives** | Sample → 25098 (Schedule Expired) → set End to Dec 1 → Save. | No confirmation. 25098 is **Serving**. DogProbs_Hulu_30s goes from Parent Expired to **Schedule Expired**: its own end (Sep 20) has passed, and the line item's change doesn't reach it. Extend the creative's end too, and it's Serving. |
 | 12 | **Weights re-balance** | Sample → 25095 → Demo clock **+30 days** → then **+1 week** twice. | Hero 60 / Cutdown 40 → Hero 100% (Cutdown ended) → Hero 60 / Holiday 40. Typed weights persist; reset (↻ on the Weighting header) returns to an even split. |
 | 13 | **Edit from tables** | Campaign page → a line item row's **pencil** in the Schedule column. Advertiser page → the campaign row's pencil. | Opens the same editor as on the item's own page; saving updates the row in place with "Schedule saved for …". |
 | 14 | **Mode isolation** | Sample → change something → toggle Demo → build something → toggle back → **↻** in Demo. | Each mode keeps its own changes and page. Restart clears Demo only; the sample keeps its change. |

@@ -103,19 +103,13 @@ export const SEED_LINE_ITEMS: LineItem[] = [
 const NY = "America/New_York";
 const LA = "America/Los_Angeles";
 
-/** A creative schedule set on the creative itself, entered in `zone`. */
+/** A creative's schedule, entered in `zone`. */
 const own = (
   zone: string,
   start: Schedule["start"],
   end: Schedule["end"],
 ): Schedule => ({ start, end, timeZone: zone });
 
-/** A creative with start and end left empty: it follows its line item's timeline (D32). */
-const followsLineItem = (zone: string): Schedule => ({
-  start: { kind: "inherit" },
-  end: { kind: "inherit" },
-  timeZone: zone,
-});
 
 const creative = (
   id: number,
@@ -123,7 +117,7 @@ const creative = (
   name: string,
   schedule: Schedule,
   customWeight: number | null = null,
-): Creative => ({ id, lineItemId, name, status: "active", schedule, customWeight });
+): Creative => ({ id, lineItemId, name, schedule, customWeight });
 
 /**
  * Creatives per line item. On 25095, two are Serving now (a typed 60% plus an
@@ -178,8 +172,12 @@ export const SEED_CREATIVES: Creative[] = [
     8431,
     25096,
     "Kooth_Hulu_30s",
-    // Start and end left empty: follows the line item's timeline (D32).
-    followsLineItem(NY),
+    // Oct 8, 2026 12:00 AM EDT → Nov 29, 2026 11:59 PM EST (same window as its line item)
+    own(
+      NY,
+      { kind: "specific", utc: "2026-10-08T04:00:00.000Z" },
+      { kind: "specific", utc: "2026-11-30T04:59:00.000Z" },
+    ),
   ),
   creative(
     8432,
@@ -192,13 +190,17 @@ export const SEED_CREATIVES: Creative[] = [
       { kind: "specific", utc: "2026-11-30T04:59:00.000Z" },
     ),
   ),
-  // 25097 — Pacific override line item; its creatives follow it, not the campaign.
+  // 25097 — Pacific line item; its creatives use Pacific time too.
   creative(
     8441,
     25097,
     "DogProbs_Disney_30s",
-    // Start and end left empty: follows the line item's timeline (D32).
-    followsLineItem(LA),
+    // Oct 8, 2026 12:00 AM PDT → Nov 29, 2026 11:59 PM PST (same window as its line item)
+    own(
+      LA,
+      { kind: "specific", utc: "2026-10-08T07:00:00.000Z" },
+      { kind: "specific", utc: "2026-11-30T07:59:00.000Z" },
+    ),
   ),
   creative(
     8442,
@@ -216,8 +218,12 @@ export const SEED_CREATIVES: Creative[] = [
     8451,
     25098,
     "DogProbs_Hulu_30s",
-    // Start and end left empty: follows the line item's timeline (D32).
-    followsLineItem(NY),
+    // Sep 1, 2026 12:00 AM EDT → Sep 20, 2026 11:59 PM EDT (same window as its line item)
+    own(
+      NY,
+      { kind: "specific", utc: "2026-09-01T04:00:00.000Z" },
+      { kind: "specific", utc: "2026-09-21T03:59:00.000Z" },
+    ),
   ),
 ];
 

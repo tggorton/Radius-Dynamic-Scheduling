@@ -20,7 +20,6 @@ import {
   lineItemImpact,
   lineItemWarnings,
 } from "../lib/hierarchy";
-import { effectiveLineItemSchedule } from "../lib/scheduleInheritance";
 import { useState } from "react";
 import type { Campaign, LineItem } from "../types";
 import { formatGoal } from "../lib/newEntities";
@@ -36,8 +35,7 @@ import { ScheduleWarningIcon } from "./ScheduleWarningIcon";
 /**
  * The campaign's line items. Each name opens that line item. The Schedule
  * column (shared `ScheduleCell`, same as the creatives table) reads in each
- * line item's own zone (D13) and marks bounds from the campaign (D32); its
- * pencil opens the same Line Item Schedule editor as the line-item page. Run
+ * line item's own zone (D13); its pencil opens the same Line Item Schedule editor as the line-item page. Run
  * State is evaluated against the campaign, with an icon when out of sync. Add New Line
  * Item opens Create Line Item; the other header buttons are visual only.
  *
@@ -127,9 +125,7 @@ export const CampaignLineItemsTable = ({ campaign }: Props) => {
               </TableCell>
               <TableCell>
                 <ScheduleCell
-                  effective={effectiveLineItemSchedule(li, campaign)}
-                  own={li.schedule}
-                  parentKind="campaign"
+                  schedule={li.schedule}
                   name={li.name}
                   onEdit={() => setEditing(li)}
                 />
@@ -182,13 +178,12 @@ export const CampaignLineItemsTable = ({ campaign }: Props) => {
             const next = { ...editing, schedule: draft };
             return [
               ...lineItemWarnings(next, campaign),
-              ...lineItemChildWarnings(next, campaign, state.creatives),
+              ...lineItemChildWarnings(next, state.creatives),
             ];
           }}
           impactOf={(draft) =>
             lineItemImpact(editing, { ...editing, schedule: draft }, campaign, state.creatives, now)
           }
-          parent={{ kind: "campaign", schedule: campaign.schedule }}
           onSave={(schedule) => setLineItemSchedule(editing.id, schedule)}
         />
       )}

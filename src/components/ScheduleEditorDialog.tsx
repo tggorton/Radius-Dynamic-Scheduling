@@ -12,16 +12,13 @@ import {
 import { useEffect, useState } from "react";
 import type { AdminStatus, Schedule, ScheduleEnd, ScheduleStart } from "../types";
 import {
-  describeBoundLine,
   formatInZone,
-  hasSpecificBound,
   resolveImmediate,
   schedulesEqual,
   utcToWallClock,
   wallClockToUtc,
   type WallClockResult,
 } from "../lib/schedule";
-import { effectiveSchedule } from "../lib/scheduleInheritance";
 import { zoneCity } from "../lib/timezones";
 import type { ScheduleWarning } from "../lib/scheduleWarnings";
 import { useApp } from "../state/AppContext";
@@ -40,23 +37,18 @@ interface Props {
   title: string;
   /** "line item", "campaign" — used in copy. */
   entityKind: string;
-  /** This entity's own schedule (inherited bounds unresolved). */
   schedule: Schedule;
+  /** Campaigns and line items. Creatives have no status (PRD R7); pass "active". */
   status: AdminStatus;
   /** Live out-of-sync warnings for a candidate (own) schedule (D10). */
   warningsFor: (draft: Schedule) => ScheduleWarning[];
   /** Items Serving now that this candidate would stop (D20). */
   impactOf: (draft: Schedule) => string[];
   onSave: (schedule: Schedule) => void;
-  /**
-   * Line items and creatives: the parent and its *effective* schedule. A
-   * bound left empty follows it (D32).
-   */
-  parent?: { kind: string; schedule: Schedule };
 }
 
-type StartMode = "inherit" | "immediate" | "specific";
-type EndMode = "inherit" | "indefinite" | "specific";
+type StartMode = "immediate" | "specific";
+type EndMode = "indefinite" | "specific";
 
 interface Draft {
   startMode: StartMode;
@@ -68,7 +60,7 @@ interface Draft {
   zone: string;
 }
 
-const toDraft = (s: Schedule, parent: Schedule | null): Draft => {
+const toDraft = (s: Schedule): Draft => {
   const start = s.start.kind === "specific" ? utcToWallClock(Date.parse(s.start.utc), s.timeZone) : null;
   const end = s.end.kind === "specific" ? utcToWallClock(Date.parse(s.end.utc), s.timeZone) : null;
   return {
@@ -78,17 +70,9 @@ const toDraft = (s: Schedule, parent: Schedule | null): Draft => {
     endMode: s.end.kind,
     endDate: end?.date ?? "",
     endTime: end?.time ?? "",
-    // With no date of its own, a child's zone defaults to the parent's for
-    // when the user does set one.
-    zone: hasSpecificBound(s) || !parent ? s.timeZone : parent.timeZone,
+    zone: s.timeZone,
   };
 };
-
-/** The parent's bound for "From campaign: …", with a resolved Immediate's time. */
-const parentBoundText = (p: Schedule, which: "start" | "end"): string =>
-  which === "start" && p.start.kind === "immediate" && p.start.resolvedAt
-    ? `Immediate (started ${formatInZone(Date.parse(p.start.resolvedAt), p.timeZone)})`
-    : describeBoundLine(p, which);
 
 /** Prompt / error text under a Specific date + time pair (D23, DST). */
 const boundProblem = (
@@ -123,11 +107,9 @@ const boundProblem = (
  * The reusable schedule control, used for campaigns, line items, and creatives.
  *
  * - Timezone comes first. Each bound is a date + time pair; the date's
- *   dropdown holds the no-date choices above a calendar:
- *   - campaign: Immediate / Indefinite — what an empty bound means (PRD R1);
- *   - line item / creative: "Same as campaign" (or line item) first — an
- *     empty bound follows the parent live, shown as "From campaign: …" —
- *     then Immediate / Indefinite as explicit choices (D32).
+ *   dropdown holds Immediate (start) / Indefinite (end) above a calendar.
+ *   Every level works the same way, and none inherits from its parent
+ *   (PRD R1, D33).
  * - Only a Specific date needs a time, and then it needs both (D23).
  * - Dates/times are plain strings read in the selected zone (D19, D21).
  * - Warnings update live and never block (D10); a save that would stop
@@ -144,15 +126,13 @@ export const ScheduleEditorDialog = ({
   warningsFor,
   impactOf,
   onSave,
-  parent,
 }: Props) => {
   const { now } = useApp();
   const { confirm, confirmDialog } = useConfirm();
-  const parentSchedule = parent?.schedule ?? null;
-  const [draft, setDraft] = useState<Draft>(() => toDraft(schedule, parentSchedule));
+  const [draft, setDraft] = useState<Draft>(() => toDraft(schedule));
 
   useEffect(() => {
-    if (open) setDraft(toDraft(schedule, parentSchedule));
+    if (open) setDraft(toDraft(schedule));
     // Reset only when the dialog opens, not on every upstream re-render.
   }, [open]);
 
@@ -172,19 +152,16 @@ export const ScheduleEditorDialog = ({
   /** The (own) schedule this draft would save, or null while it's incomplete/invalid. */
   const candidate = ((): Schedule | null => {
     let start: ScheduleStart;
-    if (draft.startMode === "inherit") {
-      start = { kind: "inherit" };
-    } else if (draft.startMode === "immediate") {
-      // Keep an already-resolved Immediate; a newly chosen one resolves at save.
+    if (draft.startMode === "immediate") {
+      // Keep an already-resolved Immediate; switching to Immediate re-stamps
+      // it at save (PRD R2).
       start = schedule.start.kind === "immediate" ? schedule.start : { kind: "immediate" };
     } else {
       if (!startResult.ok) return null;
       start = { kind: "specific", utc: new Date(startResult.utcMs).toISOString() };
     }
     let end: ScheduleEnd;
-    if (draft.endMode === "inherit") {
-      end = { kind: "inherit" };
-    } else if (draft.endMode === "indefinite") {
+    if (draft.endMode === "indefinite") {
       end = { kind: "indefinite" };
     } else {
       if (!endResult.ok) return null;
@@ -193,19 +170,16 @@ export const ScheduleEditorDialog = ({
     return resolveImmediate({ start, end, timeZone: draft.zone }, status, now);
   })();
 
-  // End must come after the effective start (an unresolved Immediate = now),
-  // inherited bounds included.
+  // End must come after the start (an unresolved Immediate = now).
   const orderError = (() => {
-    if (!candidate) return null;
-    const eff = effectiveSchedule(candidate, parentSchedule);
-    if (eff.end.kind !== "specific") return null;
+    if (!candidate || candidate.end.kind !== "specific") return null;
     const s =
-      eff.start.kind === "specific"
-        ? Date.parse(eff.start.utc)
-        : eff.start.kind === "immediate" && eff.start.resolvedAt
-          ? Date.parse(eff.start.resolvedAt)
+      candidate.start.kind === "specific"
+        ? Date.parse(candidate.start.utc)
+        : candidate.start.resolvedAt
+          ? Date.parse(candidate.start.resolvedAt)
           : now;
-    return Date.parse(eff.end.utc) <= s ? "The end must be after the start." : null;
+    return Date.parse(candidate.end.utc) <= s ? "The end must be after the start." : null;
   })();
 
   const valid = candidate !== null && orderError === null;
@@ -243,19 +217,9 @@ export const ScheduleEditorDialog = ({
 
   const today = utcToWallClock(now, draft.zone).date;
 
-  const presetsFor = (which: "start" | "end"): DatePreset[] => {
-    const own: DatePreset =
-      which === "start" ? { key: "immediate", label: "Immediate" } : { key: "indefinite", label: "Indefinite" };
-    if (!parent) return [own];
-    return [
-      {
-        key: "inherit",
-        label: `Same as ${parent.kind}`,
-        detail: parentBoundText(parent.schedule, which),
-      },
-      own,
-    ];
-  };
+  const presetsFor = (which: "start" | "end"): DatePreset[] => [
+    which === "start" ? { key: "immediate", label: "Immediate" } : { key: "indefinite", label: "Indefinite" },
+  ];
 
   const immediateNote =
     schedule.start.kind === "immediate" && schedule.start.resolvedAt
@@ -273,11 +237,9 @@ export const ScheduleEditorDialog = ({
     const caption: { text: string; error: boolean } | null =
       mode === "specific"
         ? problem
-        : mode === "inherit" && parent
-          ? { text: `From ${parent.kind}: ${parentBoundText(parent.schedule, which)}`, error: false }
-          : mode === "immediate"
-            ? { text: immediateNote, error: false }
-            : null;
+        : mode === "immediate"
+          ? { text: immediateNote, error: false }
+          : null;
     return (
       <Box>
         <Stack direction="row" spacing={1.5}>
@@ -320,9 +282,7 @@ export const ScheduleEditorDialog = ({
 
   const zoneHelper = anySpecific
     ? "Dates set here are entered and shown in this zone."
-    : parent
-      ? `Applies when you set a date of its own. Until then it follows the ${parent.kind}.`
-      : "Applies when a specific start or end time is set.";
+    : "Applies when a specific start or end time is set.";
 
   return (
     <Dialog

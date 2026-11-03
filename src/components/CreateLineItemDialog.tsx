@@ -10,7 +10,6 @@ import {
 } from "@mui/material";
 import type { Campaign } from "../types";
 import { MEDIA_TYPES, RATE_TYPES } from "../lib/newEntities";
-import { describeBoundLine } from "../lib/schedule";
 import { useApp } from "../state/AppContext";
 import { DialogHeader } from "./DialogHeader";
 import { FormPicker } from "./FormPicker";
@@ -25,8 +24,9 @@ interface Props {
 /**
  * Create Line Item, from the campaign's Add New Line Item: Line Item Name,
  * Media Type, Rate Type (the production form). Saving opens the new line item.
- * Its start and end are left empty, so it follows the campaign's timeline
- * (D32); creatives are added from its Weighted Creatives section.
+ * It starts at the PRD defaults, Immediate → Indefinite in New York, and
+ * never inherits the campaign's values (PRD R1, D33); creatives are added
+ * from its Weighted Creatives section.
  */
 export const CreateLineItemDialog = ({ open, onClose, onSaved, campaign }: Props) => {
   const { createLineItem } = useApp();
@@ -85,9 +85,8 @@ export const CreateLineItemDialog = ({ open, onClose, onSaved, campaign }: Props
             onChange={setRateType}
           />
           <Typography variant="caption" color="text.secondary">
-            The line item follows the campaign's schedule until you set its own dates on the
-            line item page. Campaign: {describeBoundLine(campaign.schedule, "start")} →{" "}
-            {describeBoundLine(campaign.schedule, "end")}.
+            The line item starts Immediate → Indefinite in New York time, independent of the
+            campaign's schedule. Set its own dates on the line item page.
           </Typography>
         </Stack>
       </DialogContent>

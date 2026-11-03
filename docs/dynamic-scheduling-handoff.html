@@ -228,9 +228,9 @@
       <div class="invcard">
         <h4>Parent / child</h4>
         <ul>
-          <li>Empty campaign dates mean <strong>Immediate → Indefinite</strong>.</li>
-          <li>Empty line-item or creative dates <strong>follow the parent live</strong> ("From campaign").</li>
-          <li><strong>No cascading edits</strong>: a parent never rewrites a child's own dates.</li>
+          <li>Every level defaults to <strong>Immediate → Indefinite, New York</strong>.</li>
+          <li><strong>No inheritance</strong>: children never take their parent's schedule or timezone.</li>
+          <li><strong>No cascading edits</strong>: a parent edit never changes its children.</li>
           <li>A parent can stop a child, but never extend it.</li>
         </ul>
       </div>
@@ -267,9 +267,9 @@
       <table>
         <thead><tr><th>Field</th><th>Choices</th><th>If left empty</th></tr></thead>
         <tbody>
-          <tr><td><strong>Start</strong></td><td>Immediate, or a specific date + time</td><td><strong>Campaign:</strong> Immediate.<br><strong>Line item / creative:</strong> follows the parent's start.</td></tr>
-          <tr><td><strong>End</strong></td><td>Indefinite, or a specific date + time</td><td><strong>Campaign:</strong> Indefinite.<br><strong>Line item / creative:</strong> follows the parent's end.</td></tr>
-          <tr><td><strong>Timezone</strong></td><td>Any IANA zone (US pinned first)</td><td>New York. It only matters for a specific date + time.</td></tr>
+          <tr><td><strong>Start</strong></td><td>Immediate, or a specific date + time</td><td>Immediate, at every level.</td></tr>
+          <tr><td><strong>End</strong></td><td>Indefinite, or a specific date + time</td><td>Indefinite, at every level.</td></tr>
+          <tr><td><strong>Timezone</strong></td><td>Any IANA zone (US pinned first)</td><td>New York, at every level. It only matters for a specific date + time.</td></tr>
         </tbody>
       </table>
     </div>
@@ -277,7 +277,7 @@
       <li><strong>Immediate</strong> starts the moment it's saved, or when the item is set Active. It then reads <span class="mono">Immediate · Started Sep 15, 2026, 9:30 AM EDT</span>. That moment is fixed; switching to Immediate later moves the start to that later moment.</li>
       <li><strong>Indefinite</strong> never ends. Neither Immediate nor Indefinite needs a time.</li>
       <li>A <strong>specific</strong> bound needs both a date and a time. The end is exclusive and must come after the start.</li>
-      <li><strong>New items:</strong> a new campaign is Immediate → Indefinite in New York. New line items and creatives start fully following their parent.</li>
+      <li><strong>New items:</strong> every new campaign, line item, and creative is Immediate → Indefinite in New York, stamped when it's created.</li>
       <li>Times always read in the item's own zone. Changing the computer's timezone never changes a value.</li>
     </ul>
   </section>
@@ -285,23 +285,23 @@
   <section>
     <span class="eyebrow">Dependencies</span>
     <h2>Parent and child schedules</h2>
-    <p class="sec-intro">Each level has its own schedule. A child's start or end that's <strong>left empty follows the parent live</strong>, bound by bound. Anything the user set on the child stays put when the parent changes.</p>
-    <div class="tree" role="img" aria-label="Example hierarchy: a campaign, a line item following the campaign's start but with its own end, and a creative following the line item entirely">
-      <div class="lvl"><span class="who">Campaign</span><span class="sch">Oct 1, 2026 9:00 AM → Dec 31, 2026 11:59 PM · New York</span></div>
-      <div class="lvl l2"><span class="who">Line item</span><span class="sch">Oct 1, 2026 9:00 AM <span class="tag">from campaign</span> → Nov 30, 2026 11:59 PM <span class="from">Start follows the campaign; the end was set on the line item.</span></span></div>
-      <div class="lvl l3"><span class="who">Creative</span><span class="sch">Oct 1 → Nov 30 <span class="tag">start &amp; end from line item</span><span class="from">Follows the line item, which follows the campaign for its start.</span></span></div>
+    <p class="sec-intro">Each level has <strong>its own schedule and timezone</strong>. Children never inherit their parent's values, at creation or later, and editing a parent never changes its children. The hierarchy matters only at serve time: a parent can stop a child, never extend it.</p>
+    <div class="tree" role="img" aria-label="Example hierarchy with independent schedules: a campaign, a line item with its own dates, and a new creative at the defaults">
+      <div class="lvl"><span class="who">Campaign</span><span class="sch">Sep 15, 2026 12:00 AM → Dec 31, 2026 11:59 PM · New York</span></div>
+      <div class="lvl l2"><span class="who">Line item</span><span class="sch">Oct 8, 2026 12:00 AM → Nov 29, 2026 11:59 PM · New York <span class="from">Its own dates. Changing the campaign doesn't change them.</span></span></div>
+      <div class="lvl l3"><span class="who">Creative</span><span class="sch">Immediate → Indefinite · New York <span class="tag">new-item default</span><span class="from">Serves only while the line item and campaign are serving.</span></span></div>
     </div>
     <ul class="bul">
-      <li><strong>No cascading edits.</strong> Editing a campaign never changes a line item's own dates or timezone. Editing a line item never changes the campaign or its creatives' own dates.</li>
-      <li><strong>A parent can stop a child, never extend it.</strong> A child serves only if every level above it is Active and in its window, and the child is in its own window too. An Immediate → Indefinite campaign doesn't revive a line item whose own end has passed.</li>
-      <li><strong>Extending revives.</strong> Move an expired end into the future, or clear it so it follows a parent that's still running, and it serves again with no reactivation.</li>
+      <li><strong>A parent can stop a child, never extend it.</strong> A child serves only if every level above it is serving and the child is inside its own window. An Immediate → Indefinite campaign doesn't revive a line item whose own end has passed.</li>
+      <li><strong>Extending revives.</strong> Move an expired end into the future, or to Indefinite, and it serves again with no reactivation. Its creatives serve again too, as long as their own windows are open.</li>
+      <li><strong>Creatives have no Active / Inactive status.</strong> They serve based on their own schedule and their parents.</li>
     </ul>
   </section>
 
   <section>
     <span class="eyebrow">In the app</span>
     <h2>The schedule editor</h2>
-    <p class="sec-intro">One dialog for every level, shown below for the same example as the diagram above: a campaign with its own dates, a line item that takes its start from the campaign and sets its own end, and a creative that follows the line item. The date dropdowns differ by level. A <strong>campaign</strong> lists only Immediate / Indefinite. A <strong>line item or creative</strong> lists <strong>Same as campaign</strong> (or <em>line item</em>) first, with the parent's value, then Immediate / Indefinite, then a calendar. A picked date has an <strong>×</strong> to clear it back to the default.</p>
+    <p class="sec-intro">One dialog for every level, and it works the same at each one. The date dropdowns hold <strong>Immediate</strong> (start) or <strong>Indefinite</strong> (end) above a calendar. There are no parent-based options. A picked date has an <strong>×</strong> to clear it back to Immediate / Indefinite.</p>
 
     <div class="mock">
       <div class="mock-cap"><span class="lts"><i></i><i></i><i></i></span> Campaign Schedule — its own dates</div>
@@ -329,57 +329,53 @@
     </div>
 
     <div class="mock">
-      <div class="mock-cap"><span class="lts"><i></i><i></i><i></i></span> Line Item Schedule — start follows the campaign, end set on the line item</div>
+      <div class="mock-cap"><span class="lts"><i></i><i></i><i></i></span> Line Item Schedule — its own dates</div>
       <div class="mock-body">
         <div class="dlg">
           <h5>Line Item Schedule</h5>
           <div class="fld"><span class="fl">Timezone</span><span>New York — Eastern · UTC−04:00 (EDT)</span><span class="ic">▾</span></div>
           <p class="fhelp">Dates set here are entered and shown in this zone.</p>
           <div class="frow">
-            <div class="fld"><span class="fl">Start date</span><span>Same as campaign</span><span class="ic">▦</span></div>
-            <div class="fld dim"><span class="fl">Start time</span><span>—</span></div>
+            <div class="fld"><span class="fl">Start date</span><span>Oct 8, 2026</span><span class="ic">✕ ▦</span></div>
+            <div class="fld"><span class="fl">Start time</span><span>12:00 AM</span><span class="ic">◷</span></div>
           </div>
-          <p class="fhelp">From campaign: Oct 1, 2026, 9:00 AM EDT</p>
           <div class="frow">
-            <div class="fld"><span class="fl">End date</span><span>Nov 30, 2026</span><span class="ic">✕ ▦</span></div>
+            <div class="fld"><span class="fl">End date</span><span>Nov 29, 2026</span><span class="ic">✕ ▦</span></div>
             <div class="fld"><span class="fl">End time</span><span>11:59 PM</span><span class="ic">◷</span></div>
           </div>
           <div class="menu" aria-hidden="true">
-            <div class="sel">Same as campaign<small>Dec 31, 2026, 11:59 PM EST</small></div>
             <div>Indefinite</div>
-            <div class="cal">‹ November 2026 › — calendar grid</div>
+            <div class="cal">‹ November 2026 › — calendar grid (Nov 29 selected)</div>
           </div>
           <div class="btns"><span class="t">Cancel</span><span class="c">Save Schedule</span></div>
         </div>
-        <p class="mcap-note">The open menu is the <strong>End date</strong> dropdown. Picking <strong>Same as campaign</strong> would make the end follow the campaign's Dec 31 again. The start already follows it, so its time field shows "—".</p>
+        <p class="mcap-note">The open menu is the <strong>End date</strong> dropdown: <strong>Indefinite</strong> above the calendar, exactly like a campaign's. The line item's dates are its own, so changing the campaign never moves them.</p>
       </div>
     </div>
 
     <div class="mock">
-      <div class="mock-cap"><span class="lts"><i></i><i></i><i></i></span> Creative Schedule — both dates follow the line item</div>
+      <div class="mock-cap"><span class="lts"><i></i><i></i><i></i></span> Creative Schedule — a new creative at the defaults</div>
       <div class="mock-body">
         <div class="dlg">
           <h5>Creative Schedule</h5>
           <div class="fld mut"><span class="fl">Timezone</span><span>New York — Eastern · UTC−04:00 (EDT)</span><span class="ic">▾</span></div>
-          <p class="fhelp">Applies when you set a date of its own. Until then it follows the line item.</p>
+          <p class="fhelp">Applies when a specific start or end time is set.</p>
           <div class="frow">
-            <div class="fld"><span class="fl">Start date</span><span>Same as line item</span><span class="ic">▦</span></div>
+            <div class="fld"><span class="fl">Start date</span><span>Immediate</span><span class="ic">▦</span></div>
             <div class="fld dim"><span class="fl">Start time</span><span>—</span></div>
           </div>
           <div class="menu" aria-hidden="true">
-            <div class="sel">Same as line item<small>Oct 1, 2026, 9:00 AM EDT</small></div>
-            <div>Immediate</div>
-            <div class="cal">‹ October 2026 › — calendar grid</div>
+            <div class="sel">Immediate</div>
+            <div class="cal">‹ November 2026 › — calendar grid</div>
           </div>
-          <p class="fhelp">From line item: Oct 1, 2026, 9:00 AM EDT</p>
+          <p class="fhelp">Started Nov 3, 2026, 2:15 PM EST.</p>
           <div class="frow">
-            <div class="fld"><span class="fl">End date</span><span>Same as line item</span><span class="ic">▦</span></div>
+            <div class="fld"><span class="fl">End date</span><span>Indefinite</span><span class="ic">▦</span></div>
             <div class="fld dim"><span class="fl">End time</span><span>—</span></div>
           </div>
-          <p class="fhelp">From line item: Nov 30, 2026, 11:59 PM EST</p>
           <div class="btns"><span class="t">Cancel</span><span class="c">Save Schedule</span></div>
         </div>
-        <p class="mcap-note">The open menu is the <strong>Start date</strong> dropdown. Both dates follow the line item, whose start in turn comes from the campaign, so following chains all the way up. The timezone reads greyed out because the creative has no date of its own yet. New creatives start this way. Picking a calendar day gives the creative its own date (and then needs a time).</p>
+        <p class="mcap-note">The open menu is the <strong>Start date</strong> dropdown. A new creative starts at <strong>Immediate → Indefinite, New York</strong>, never at its line item's dates. The time fields show "—" because Immediate and Indefinite need no time, and the timezone is greyed out until a specific date is picked. Its Immediate start never raises "Starts before parent", and Indefinite never raises "Ends after parent".</p>
       </div>
     </div>
 
@@ -404,7 +400,7 @@
         <tbody>
           <tr><td class="ord">1</td><td><span class="stname"><span class="dot dot--ring d-amber"></span>Parent Not Serving</span></td><td class="q">Its own schedule is fine, but a parent is Inactive or hasn't started.</td><td class="q">"Campaign is set to Inactive." / "Campaign starts Oct 5, 2026, 9:00 AM EDT."</td></tr>
           <tr><td class="ord">2</td><td><span class="stname"><span class="dot d-amber"></span>Parent Expired</span></td><td class="q">Its own schedule is fine, but a parent's schedule has ended.</td><td class="q">"Line item ended Sep 20, 2026, 11:59 PM EDT."</td></tr>
-          <tr><td class="ord">3</td><td><span class="stname"><span class="dot dot--ring d-grey"></span>Inactive</span></td><td class="q">Its status is switched off.</td><td class="q">"Status is set to Inactive."</td></tr>
+          <tr><td class="ord">3</td><td><span class="stname"><span class="dot dot--ring d-grey"></span>Inactive</span></td><td class="q">Its status is switched off. Campaigns and line items only; creatives have no status.</td><td class="q">"Status is set to Inactive."</td></tr>
           <tr><td class="ord">4</td><td><span class="stname"><span class="dot dot--ring d-blue"></span>Pending Start</span></td><td class="q">Active, but its start time hasn't arrived.</td><td class="q">"Starts Nov 20, 2026, 12:00 AM EST."</td></tr>
           <tr><td class="ord">5</td><td><span class="stname"><span class="dot d-grey"></span>Schedule Expired</span></td><td class="q">Its end time has passed. Extending the end resumes serving; no reactivation needed.</td><td class="q">"Ended Sep 30, 2026, 11:59 PM EDT."</td></tr>
           <tr><td class="ord">6</td><td><span class="stname"><span class="dot d-green"></span>Serving</span></td><td class="q">Active and inside its schedule, and so is everything above it.</td><td class="q">"Serving until Dec 31, 2026, 11:59 PM EST."</td></tr>
@@ -420,14 +416,14 @@
   <section>
     <span class="eyebrow">Warnings</span>
     <h2>Out-of-sync schedules</h2>
-    <p class="sec-intro">Warnings flag a schedule that won't serve the way it reads. They <strong>never block a save</strong>. Two severities: <span class="sev wa">▲ Warning</span> and <span class="sev hi">● High</span>. A bound the child follows always matches its parent, so it never triggers a warning.</p>
+    <p class="sec-intro">Warnings flag a schedule that won't serve the way it reads. They <strong>never block a save</strong>. Two severities: <span class="sev wa">▲ Warning</span> and <span class="sev hi">● High</span>. A child's <strong>Immediate</strong> start never triggers "Starts before", and an <strong>Indefinite</strong> end never triggers "Ends after": the parent's window already bounds delivery.</p>
     <div class="tbl-scroll">
       <table>
         <thead><tr><th>Rule</th><th>Severity</th><th>Example message</th></tr></thead>
         <tbody>
           <tr><td><strong>Never overlaps:</strong> the child's whole window falls outside the parent's</td><td><span class="sev hi">● High</span></td><td class="q">"Never serves: its whole schedule falls outside the campaign's (Sep 15, 2026, 12:00 AM EDT → Dec 31, 2026, 11:59 PM EST)."</td></tr>
-          <tr><td><strong>Starts before</strong> the parent starts</td><td><span class="sev wa">▲ Warning</span></td><td class="q">"Starts Sep 1, 2026, 12:00 AM EDT, before the campaign starts (Sep 15, 2026, 12:00 AM EDT). It won't serve until then."</td></tr>
-          <tr><td><strong>Ends after</strong> the parent ends, including Indefinite under a parent with an end</td><td><span class="sev wa">▲ Warning</span></td><td class="q">"Runs indefinitely, but the campaign ends Dec 31, 2026, 11:59 PM EST. It stops serving then."</td></tr>
+          <tr><td><strong>Starts before:</strong> the child has a specific start earlier than the parent's</td><td><span class="sev wa">▲ Warning</span></td><td class="q">"Starts Sep 1, 2026, 12:00 AM EDT, before the campaign starts (Sep 15, 2026, 12:00 AM EDT). It won't serve until then."</td></tr>
+          <tr><td><strong>Ends after:</strong> the child has a specific end later than the parent's</td><td><span class="sev wa">▲ Warning</span></td><td class="q">"Ends Jan 15, 2027, 11:59 PM EST, after the campaign ends (Dec 31, 2026, 11:59 PM EST). It stops serving then."</td></tr>
           <tr><td><strong>Different timezone</strong> from the parent, when a specific time is involved</td><td><span class="sev wa">▲ Warning</span></td><td class="q">"Set to its own timezone, Los Angeles time (PDT); the campaign uses New York time (EDT). The line item starts Oct 8, 2026, 12:00 AM PDT (Oct 8, 2026, 3:00 AM EDT campaign time)."</td></tr>
           <tr><td><strong>Coverage:</strong> the line item is Serving, but none of its creatives are</td><td><span class="sev hi">● High</span></td><td class="q">"The line item is Serving, but none of its 2 creatives are. Nothing is delivering."</td></tr>
         </tbody>
@@ -447,14 +443,14 @@
     </div>
     <div class="callout">
       <span class="eyebrow">Confirmations: these do ask first</span>
-      <p>Any save that would stop something <strong>currently Serving</strong> asks <strong>"Stop delivery now?"</strong> and lists everything it stops, including children that follow the changed dates. That covers date changes and setting a campaign or line item Inactive. Changes that only resume or extend delivery save without asking. Removing a creative also confirms.</p>
+      <p>Any save that would stop something <strong>currently Serving</strong> asks <strong>"Stop delivery now?"</strong> and lists everything it stops, including descendants (for example, a line item's serving creatives when its end moves into the past). That covers date changes and setting a campaign or line item Inactive. Changes that only resume or extend delivery save without asking. Removing a creative also confirms.</p>
     </div>
   </section>
 
   <section>
     <span class="eyebrow">Tables</span>
     <h2>One Schedule column everywhere</h2>
-    <p class="sec-intro">Separate Start / End columns were <strong>combined into one Schedule column</strong> to simplify the tables. It shows the start, "→ end", and a caption with the zone and anything that comes from the parent. The <strong>pencil</strong> opens that row's editor, and <strong>Run State</strong> always comes next. The same column appears in the advertiser's campaigns, the campaign's line items, and the line item's creatives.</p>
+    <p class="sec-intro">Separate Start / End columns were <strong>combined into one Schedule column</strong> to simplify the tables. It shows the start, "→ end", and a caption with the zone when a specific time is in play. The <strong>pencil</strong> opens that row's editor, and <strong>Run State</strong> always comes next. The same column appears in the advertiser's campaigns, the campaign's line items, and the line item's creatives.</p>
     <div class="mock">
       <div class="mock-cap"><span class="lts"><i></i><i></i><i></i></span> Campaign → Line Items</div>
       <div class="mock-body">
@@ -464,7 +460,7 @@
             <tr>
               <td class="lnk">…Community Forums_Disney+</td><td>Active</td>
               <td><div class="scell"><div><div class="l1">Immediate</div><div class="l1">→ Indefinite</div></div><svg class="pen" viewBox="0 0 24 24" aria-hidden="true"><path d="M3 17.25V21h3.75L17.81 9.94l-3.75-3.75L3 17.25zM20.71 7.04a1 1 0 0 0 0-1.41l-2.34-2.34a1 1 0 0 0-1.41 0l-1.83 1.83 3.75 3.75 1.83-1.83z"/></svg></div></td>
-              <td><span class="schip"><span class="sd sg"></span>Serving<svg class="warn" viewBox="0 0 24 24" aria-hidden="true"><path d="M1 21h22L12 2 1 21zm12-3h-2v-2h2v2zm0-4h-2v-4h2v4z"/></svg></span></td><td>$1.65 CPM</td><td>348,768</td>
+              <td><span class="schip"><span class="sd sg"></span>Serving</span></td><td>$1.65 CPM</td><td>348,768</td>
             </tr>
             <tr>
               <td class="lnk">…Community Forums_Hulu</td><td>Active</td>
@@ -473,8 +469,8 @@
             </tr>
             <tr>
               <td class="lnk">…Dog Probs_Hulu</td><td>Active</td>
-              <td><div class="scell"><div><div class="l1">Sep 1, 2026 · 12:00 AM EDT</div><div class="l1">→ Dec 31, 2026 · 11:59 PM EST</div><div class="cap">New York (EDT) · End from campaign</div></div><svg class="pen" viewBox="0 0 24 24" aria-hidden="true"><path d="M3 17.25V21h3.75L17.81 9.94l-3.75-3.75L3 17.25zM20.71 7.04a1 1 0 0 0 0-1.41l-2.34-2.34a1 1 0 0 0-1.41 0l-1.83 1.83 3.75 3.75 1.83-1.83z"/></svg></div></td>
-              <td><span class="schip"><span class="sd sg"></span>Serving<svg class="warn" viewBox="0 0 24 24" aria-hidden="true"><path d="M1 21h22L12 2 1 21zm12-3h-2v-2h2v2zm0-4h-2v-4h2v4z"/></svg></span></td><td>$1.65 CPM</td><td>348,766</td>
+              <td><div class="scell"><div><div class="l1">Sep 1, 2026 · 12:00 AM EDT</div><div class="l1">→ Sep 20, 2026 · 11:59 PM EDT</div><div class="cap">New York (EDT) · UTC−04:00</div></div><svg class="pen" viewBox="0 0 24 24" aria-hidden="true"><path d="M3 17.25V21h3.75L17.81 9.94l-3.75-3.75L3 17.25zM20.71 7.04a1 1 0 0 0 0-1.41l-2.34-2.34a1 1 0 0 0-1.41 0l-1.83 1.83 3.75 3.75 1.83-1.83z"/></svg></div></td>
+              <td><span class="schip"><span class="sd sx"></span>Schedule Expired<svg class="warn" viewBox="0 0 24 24" aria-hidden="true"><path d="M1 21h22L12 2 1 21zm12-3h-2v-2h2v2zm0-4h-2v-4h2v4z"/></svg></span></td><td>$1.65 CPM</td><td>348,766</td>
             </tr>
             <tr>
               <td class="lnk">…Dog Probs_Disney+</td><td>Active</td>
@@ -515,8 +511,8 @@
     <h2>Create flows</h2>
     <div class="steps">
       <div class="step"><h4>Add New Campaign</h4><p>From the advertiser: Name, Vertical, Line of Business. It opens the new campaign, Immediate → Indefinite in New York.</p></div>
-      <div class="step"><h4>Add New Line Item</h4><p>From the campaign: Line Item Name, Media Type (banner / video), Rate Type (CPC / CPE / CPM / Flat Fee). It opens the new line item, following the campaign's schedule.</p></div>
-      <div class="step"><h4>Add Weighted Creatives</h4><p>From the line item: pick one or more from the library. New creatives follow the line item's schedule until they get their own dates.</p></div>
+      <div class="step"><h4>Add New Line Item</h4><p>From the campaign: Line Item Name, Media Type (banner / video), Rate Type (CPC / CPE / CPM / Flat Fee). It opens the new line item, Immediate → Indefinite in New York, whatever the campaign's schedule.</p></div>
+      <div class="step"><h4>Add Weighted Creatives</h4><p>From the line item: pick one or more from the library. New creatives are Immediate → Indefinite in New York until they get their own dates.</p></div>
     </div>
   </section>
 
@@ -528,8 +524,8 @@
       <table>
         <thead><tr><th>Control</th><th>What it does</th><th>Use it to</th></tr></thead>
         <tbody>
-          <tr><td><strong>Preset sample</strong> (default)</td><td class="q">Loads seeded campaign <span class="mono">4074</span> with 4 line items and 9 creatives: a spread of Run States, warnings, timezones (one Los Angeles line item), and three creatives that follow their line item. Opens on line item 25095.</td><td class="q">See every state and warning without setup.</td></tr>
-          <tr><td><strong>Demo</strong></td><td class="q">Starts empty on the advertiser page (Kerv). Build a campaign, line items, and creatives from scratch with the create forms.</td><td class="q">Test the first-time flow and defaults: new campaign = Immediate → Indefinite; new children follow their parent.</td></tr>
+          <tr><td><strong>Preset sample</strong> (default)</td><td class="q">Loads seeded campaign <span class="mono">4074</span> with 4 line items and 9 creatives: a spread of Run States, warnings, and timezones (one Los Angeles line item). Opens on line item 25095.</td><td class="q">See every state and warning without setup.</td></tr>
+          <tr><td><strong>Demo</strong></td><td class="q">Starts empty on the advertiser page (Kerv). Build a campaign, line items, and creatives from scratch with the create forms.</td><td class="q">Test the first-time flow and defaults: every new campaign, line item, and creative is Immediate → Indefinite in New York.</td></tr>
           <tr><td><strong>↻ Restart demo</strong> (Demo only)</td><td class="q">Asks to confirm, then clears everything built in Demo and returns to an empty advertiser page. <strong>The preset sample isn't touched.</strong></td><td class="q">Run the build-from-scratch flow again cleanly.</td></tr>
           <tr><td><strong>Demo clock</strong></td><td class="q">Jumps time by +1 hour, +1 day, +1 week, +30 days, −1 day, or −1 week. It turns amber while simulated; <em>Back to real time</em> resets it. It applies in both modes.</td><td class="q">Watch Pending Start → Serving → Schedule Expired, warnings change, and weights re-balance.</td></tr>
         </tbody>
@@ -554,24 +550,24 @@
       <table>
         <thead><tr><th>Item</th><th>Oct 15</th><th>Nov 5</th><th>Nov 22</th></tr></thead>
         <tbody>
-          <tr><td><strong>25095</strong> · Immediate → Indefinite</td><td>Serving ▲</td><td>Serving ▲</td><td>Serving ▲</td></tr>
+          <tr><td><strong>25095</strong> · Immediate → Indefinite</td><td>Serving</td><td>Serving</td><td>Serving</td></tr>
           <tr><td>· Hero (typed 60%)</td><td>Serving · 60%</td><td>Serving · 100%</td><td>Serving · 60%</td></tr>
           <tr><td>· Cutdown (ends Oct 31)</td><td>Serving · 40%</td><td>Expired · –</td><td>Expired · –</td></tr>
           <tr><td>· Holiday (starts Nov 20)</td><td>Pending · –</td><td>Pending · –</td><td>Serving · 40%</td></tr>
           <tr><td><strong>25096</strong> · Oct 8 → Nov 29</td><td>Serving</td><td>Serving</td><td>Serving</td></tr>
-          <tr><td>· Kooth_Hulu_30s (follows)</td><td>Serving · 100%</td><td>Serving · 50%</td><td>Serving · 50%</td></tr>
+          <tr><td>· Kooth_Hulu_30s (Oct 8 → Nov 29)</td><td>Serving · 100%</td><td>Serving · 50%</td><td>Serving · 50%</td></tr>
           <tr><td>· Kooth_Hulu_15s (starts Oct 22)</td><td>Pending · –</td><td>Serving · 50%</td><td>Serving · 50%</td></tr>
           <tr><td><strong>25097</strong> · Los Angeles zone</td><td>Serving ▲</td><td>Serving ▲</td><td>Serving ▲</td></tr>
           <tr><td>· Promo (Oct 20 → Nov 15)</td><td>Pending · –</td><td>Serving · 50%</td><td>Expired · –</td></tr>
           <tr><td><strong>25098</strong> · Sep 1 → Sep 20</td><td>Expired ▲</td><td>Expired ▲</td><td>Expired ▲</td></tr>
-          <tr><td>· DogProbs_Hulu_30s (follows)</td><td>Parent Expired</td><td>Parent Expired</td><td>Parent Expired</td></tr>
+          <tr><td>· DogProbs_Hulu_30s (Sep 1 → Sep 20)</td><td>Parent Expired</td><td>Parent Expired</td><td>Parent Expired</td></tr>
         </tbody>
       </table>
     </div>
     <p>The full guide, with every seeded item, all warnings, 17 step-by-step scenarios with expected results, and reset options, is <span class="mono">docs/TESTING.md</span> in the repo.</p>
     <div class="callout note">
       <span class="eyebrow">Good test passes</span>
-      <p><strong>States:</strong> in Preset sample, jump +30 days and back. <strong>Inheritance:</strong> change the campaign's end, and watch following line items and creatives move while ones with their own dates stay put. <strong>Defaults:</strong> in Demo, create a campaign and a line item, and check that the line item reads "From campaign". <strong>Warnings:</strong> give a line item a start before the campaign's, or a different timezone, and check the editor, row icon, and panels.</p>
+      <p><strong>States:</strong> in Preset sample, jump +30 days and back. <strong>No inheritance:</strong> change the campaign's schedule, and check that its line items and creatives don't change. <strong>Defaults:</strong> in Demo, set the campaign to another timezone, then create a line item and check it's Immediate → Indefinite in New York. <strong>Warnings:</strong> give a line item a start before the campaign's, or a different timezone, and check the editor, row icon, and panels.</p>
     </div>
   </section>
 
@@ -605,7 +601,7 @@
     <div class="imap">
       <div class="row"><div class="lbl">Domain logic · src/lib (pure)</div>
         <div class="item"><span class="fn">schedule.ts</span>: wall clock ⇄ UTC through an explicit zone, DST, formatting, <span class="fn">evaluateRunning</span> (PRD order).</div>
-        <div class="item"><span class="fn">scheduleInheritance.ts</span>: <span class="fn">effectiveSchedule</span> resolves "follow the parent" bounds. Never display or evaluate a stored child schedule directly.</div>
+        <div class="item"><span class="fn">scheduleMigration.ts</span>: converts schedules saved by earlier builds. <span class="fn">scheduleTime.ts</span>: the time field's parsing and list.</div>
         <div class="item"><span class="fn">scheduleWarnings.ts</span> + <span class="fn">hierarchy.ts</span>: warning rules, coverage, stop-delivery impact.</div>
         <div class="item"><span class="fn">runningStatus.ts</span>: state labels, colors, tooltips. <span class="fn">scheduleWeights.ts</span>: weighting.</div>
       </div>
@@ -624,8 +620,8 @@
     <span class="eyebrow">Still open</span>
     <h2>Not built yet, and for review</h2>
     <ul class="bul">
-      <li><strong>Not built:</strong> a per-creative Active / Inactive switch; sharing one creative across line items; a warnings list in the top-bar bell; the migration cases (objects without dates, flagging serving objects for release); distribution tags per line item.</li>
-      <li><strong>Confirm with the PRD owner:</strong> line items and creatives default to their parent's schedule and timezone, which refines R1 ("New York at every level") for child levels.</li>
+      <li><strong>Not built:</strong> sharing one creative across line items; a warnings list in the top-bar bell; the migration cases (objects without dates, flagging serving objects for release); distribution tags per line item.</li>
+      <li><strong>PRD gap:</strong> when every serving creative has a typed weight and they total under 100%, the prototype scales them up to 100%. The PRD (R24) only covers totals over 100%.</li>
       <li><strong>Possible refinements:</strong> skip the timezone warning when the parent has no specific times; wording for "Immediate · Started …".</li>
     </ul>
   </section>
@@ -635,7 +631,7 @@
     <h2>Walkthrough</h2>
     <div class="steps">
       <div class="step"><h4>Line item page</h4><p>The Schedule row (Start · End · Timezone · Run State). Hover the chip, then open <em>Edit Schedule</em>.</p></div>
-      <div class="step"><h4>Follow the parent</h4><p>In a creative's editor, clear its end date (×). It reads "Same as line item", and the row says "End from line item".</p></div>
+      <div class="step"><h4>No inheritance</h4><p>Change a line item's end date. Its creatives keep their own dates, and a new creative added to it is Immediate → Indefinite.</p></div>
       <div class="step"><h4>Watch time pass</h4><p>Demo clock → <em>+30 days</em>. Creatives start and end, and the weights re-balance.</p></div>
       <div class="step"><h4>Campaign view</h4><p>Edit a line item's schedule from the campaign's table pencil, and see the out-of-sync list update.</p></div>
       <div class="step"><h4>Build from scratch</h4><p>Toggle <em>Demo</em> → Add New Campaign → Add New Line Item → Add Weighted Creatives.</p></div>

@@ -52,18 +52,19 @@ projects stays easy to read:
   [newEntities.ts](src/lib/newEntities.ts)).
 - **Domain:** [schedule.ts](src/lib/schedule.ts) (conversion, formatting, `evaluateRunning`),
   [timezones.ts](src/lib/timezones.ts), [scheduleWarnings.ts](src/lib/scheduleWarnings.ts),
-  [scheduleInheritance.ts](src/lib/scheduleInheritance.ts) (D32 inheritance),
+  [scheduleMigration.ts](src/lib/scheduleMigration.ts) (converts older saved schedules),
+  [scheduleTime.ts](src/lib/scheduleTime.ts) (time-field parsing / list),
   [scheduleWeights.ts](src/lib/scheduleWeights.ts) (D28 weighting among Serving creatives),
   [scheduleCalendar.ts](src/lib/scheduleCalendar.ts) (date-dropdown month grid),
   [hierarchy.ts](src/lib/hierarchy.ts) (campaign → line item → creative wiring and D20
   impact), and [runningStatus.ts](src/lib/runningStatus.ts).
-- **Inheritance (D32):** a line item's or creative's start/end left empty is stored as
-  `{ kind: "inherit" }` and follows the parent live. **Never display or evaluate a stored
-  child schedule directly.** Resolve it with `effectiveSchedule` /
-  `effectiveLineItemSchedule` / `effectiveCreativeSchedule`
-  ([scheduleInheritance.ts](src/lib/scheduleInheritance.ts)); `hierarchy.ts` already does.
-  Parent edits never rewrite children (no cascade). A campaign never inherits; its empty
-  bounds are Immediate / Indefinite.
+- **No inheritance (D33, PRD R1):** every campaign, line item, and creative has its own
+  schedule and timezone, defaulting to Immediate → Indefinite in New York. Children never
+  take parent values, and parent edits never touch children. Don't reintroduce "follow the
+  parent". **Creatives have no administrative status** (PRD R7): `Creative` has no
+  `status`, and the evaluator treats a missing status as eligible.
+- **Warnings (PRD R18):** "Starts before parent" / "Ends after parent" fire only for a
+  child's *specific* start / end, never Immediate / Indefinite.
 - **Schedules in tables** always use the shared [ScheduleCell](src/components/ScheduleCell.tsx)
   (one Schedule column + pencil, placed before Run State). Don't reintroduce separate
   Start / End columns.

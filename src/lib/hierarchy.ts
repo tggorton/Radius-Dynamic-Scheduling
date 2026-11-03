@@ -1,12 +1,11 @@
 import type { Campaign, Creative, LineItem, RunningEvaluation } from "../types";
 import { evaluateRunning, type ScheduledEntity } from "./schedule";
-import { effectiveCreativeSchedule, effectiveLineItemSchedule } from "./scheduleInheritance";
 import { parentChildWarnings, type ScheduleWarning } from "./scheduleWarnings";
 
 /*
- * Campaign → Line Item → Creative wiring for the pure schedule logic. Every
- * entity is evaluated on its *effective* schedule: bounds left empty follow
- * the parent live (D32).
+ * Campaign → Line Item → Creative wiring for the pure schedule logic. Each
+ * level is evaluated on its own schedule (children never inherit, PRD R1);
+ * creatives have no administrative status (PRD R7).
  */
 
 export const campaignEntity = (c: Campaign): ScheduledEntity => ({
@@ -15,16 +14,15 @@ export const campaignEntity = (c: Campaign): ScheduledEntity => ({
   schedule: c.schedule,
 });
 
-export const lineItemEntity = (li: LineItem, c: Campaign): ScheduledEntity => ({
+export const lineItemEntity = (li: LineItem): ScheduledEntity => ({
   kind: "Line item",
   status: li.status,
-  schedule: effectiveLineItemSchedule(li, c),
+  schedule: li.schedule,
 });
 
-export const creativeEntity = (cr: Creative, li: LineItem, c: Campaign): ScheduledEntity => ({
+export const creativeEntity = (cr: Creative): ScheduledEntity => ({
   kind: "Creative",
-  status: cr.status,
-  schedule: effectiveCreativeSchedule(cr, li, c),
+  schedule: cr.schedule,
 });
 
 export const evaluateCampaign = (c: Campaign, now: number): RunningEvaluation =>
@@ -34,7 +32,7 @@ export const evaluateLineItem = (
   li: LineItem,
   c: Campaign,
   now: number,
-): RunningEvaluation => evaluateRunning(lineItemEntity(li, c), [campaignEntity(c)], now);
+): RunningEvaluation => evaluateRunning(lineItemEntity(li), [campaignEntity(c)], now);
 
 export const evaluateCreative = (
   cr: Creative,
@@ -42,13 +40,13 @@ export const evaluateCreative = (
   c: Campaign,
   now: number,
 ): RunningEvaluation =>
-  evaluateRunning(creativeEntity(cr, li, c), [campaignEntity(c), lineItemEntity(li, c)], now);
+  evaluateRunning(creativeEntity(cr), [campaignEntity(c), lineItemEntity(li)], now);
 
 export const lineItemWarnings = (li: LineItem, c: Campaign): ScheduleWarning[] =>
-  parentChildWarnings(lineItemEntity(li, c), campaignEntity(c));
+  parentChildWarnings(lineItemEntity(li), campaignEntity(c));
 
-export const creativeWarnings = (cr: Creative, li: LineItem, c: Campaign): ScheduleWarning[] =>
-  parentChildWarnings(creativeEntity(cr, li, c), lineItemEntity(li, c));
+export const creativeWarnings = (cr: Creative, li: LineItem): ScheduleWarning[] =>
+  parentChildWarnings(creativeEntity(cr), lineItemEntity(li));
 
 export const creativesOf = (li: LineItem, creatives: Creative[]): Creative[] =>
   creatives.filter((cr) => cr.lineItemId === li.id);
@@ -92,14 +90,13 @@ export const campaignChildWarnings = (
 /** One warning per out-of-sync creative, for the line-item summary and editor. */
 export const lineItemChildWarnings = (
   li: LineItem,
-  c: Campaign,
   creatives: Creative[],
 ): ScheduleWarning[] =>
   summarizeChildren(
     creativesOf(li, creatives).map((cr) => ({
       key: `cr-${cr.id}`,
       label: cr.name,
-      warnings: creativeWarnings(cr, li, c),
+      warnings: creativeWarnings(cr, li),
     })),
   );
 
@@ -155,7 +152,7 @@ const creativeEvaluations = (
 
 /**
  * Everything a campaign-level change could stop: the campaign, its line items,
- * and their creatives — including those that follow its dates (D32).
+ * and their creatives.
  */
 export const campaignImpact = (
   current: Campaign,
@@ -180,7 +177,7 @@ export const campaignImpact = (
     ],
   );
 
-/** A line-item change: the line item and its creatives (some may follow its dates, D32). */
+/** A line-item change: the line item and its creatives. */
 export const lineItemImpact = (
   current: LineItem,
   next: LineItem,

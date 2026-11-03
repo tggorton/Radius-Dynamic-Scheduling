@@ -139,7 +139,7 @@ export const AdvertiserPage = () => {
                       <Typography variant="body2">{c.status === "active" ? "Active" : "Inactive"}</Typography>
                     </TableCell>
                     <TableCell>
-                      <ScheduleCell effective={c.schedule} own={c.schedule} name={c.name} onEdit={() => setEditing(c)} />
+                      <ScheduleCell schedule={c.schedule} name={c.name} onEdit={() => setEditing(c)} />
                     </TableCell>
                     <TableCell>
                       <Stack direction="row" alignItems="center" spacing={1}>

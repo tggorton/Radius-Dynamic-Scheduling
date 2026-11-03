@@ -1,6 +1,5 @@
 import type { Campaign, LineItem } from "../types";
 import { defaultSchedule, resolveImmediate } from "./schedule";
-import { childDefaultSchedule } from "./scheduleInheritance";
 
 /*
  * Building new campaigns and line items (the Create Campaign / Create Line
@@ -40,7 +39,7 @@ export const nextId = (ids: number[], floor: number): number =>
 
 /**
  * A new campaign: Active, at the PRD defaults — Immediate (resolved now, PRD
- * R2) → Indefinite, New York (R1, D32). The other fields read as unset, like a
+ * R2) → Indefinite, New York (R1, D33). The other fields read as unset, like a
  * fresh production campaign.
  */
 export const newCampaign = (
@@ -65,20 +64,22 @@ export const newCampaign = (
 });
 
 /**
- * A new line item: start and end left empty, so it follows the campaign's
- * timeline (D32). Media Type is the line item's creative type; the rate starts at $0
- * in the chosen rate type, like production.
+ * A new line item: the same PRD defaults as a campaign — Immediate (resolved
+ * now) → Indefinite, New York. It never inherits the campaign's schedule or
+ * timezone (PRD R1, D33). Media Type is the line item's creative type; the
+ * rate starts at $0 in the chosen rate type, like production.
  */
 export const newLineItem = (
   id: number,
   campaign: Campaign,
   fields: { name: string; mediaType: string; rateType: string },
+  now: number,
 ): LineItem => ({
   id,
   campaignId: campaign.id,
   name: fields.name,
   status: "active",
-  schedule: childDefaultSchedule(campaign.schedule.timeZone),
+  schedule: resolveImmediate(defaultSchedule(), "active", now),
   creativeType: fields.mediaType,
   rate: `$0 ${fields.rateType}`,
   impressionGoal: 0,

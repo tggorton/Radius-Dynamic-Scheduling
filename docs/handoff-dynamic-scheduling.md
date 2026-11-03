@@ -46,10 +46,9 @@ Numbers are the PRD's requirement numbers.
 
 - **Defaults (R1, workflow §1):** Start = **Immediate**, End = **Indefinite**, Timezone =
   **`America/New_York`**, for all three levels. The user can switch back to Immediate or
-  Indefinite at any time. **As built (D32):** a campaign's empty start / end *is*
-  Immediate / Indefinite in New York, matching R1. A line item's or creative's empty start /
-  end follows its **parent's** live, so a child of an Immediate → Indefinite, New York
-  campaign also reads that way. That refines R1 for child levels; flag it to the PRD owner.
+  Indefinite at any time. **As built (D33):** every level defaults the same way, and children
+  never inherit schedule or timezone values from their parent (PRD v5, R1).
+
 - **Immediate (R2)** sets the effective start to the moment the object is **saved or
   activated**.
 - **Indefinite (R3)** means the end is never evaluated.
@@ -85,7 +84,8 @@ have no UI. The prototype only models their visible result.
 ### 1. Hierarchy and pages
 
 - **Advertiser → Campaign → Line Item → Creative.** Each campaign, line item, and creative
-  has its own schedule and its own administrative status. Distribution tags have no
+  has its own schedule. Campaigns and line items have an administrative status (Active /
+  Inactive); **creatives don't** (PRD R7). Distribution tags have no
   schedule; they follow their line item (D1).
 - **Pages:** Advertiser (campaigns table), Campaign (details + line items table), Line Item
   (details + Weighted Creatives table). There's no breadcrumb. Each page title's
@@ -100,9 +100,9 @@ A schedule is a **start**, an **end**, and an **IANA timezone**:
 
 | Bound | Choices | If left empty |
 |---|---|---|
-| Start | **Immediate**, or a **specific date + time** | Campaign: **Immediate**. Line item / creative: **follows the parent's start** |
-| End | **Indefinite**, or a **specific date + time** | Campaign: **Indefinite**. Line item / creative: **follows the parent's end** |
-| Timezone | Any IANA zone (US zones pinned first). Default **New York** | Only matters for a specific date + time (D22) |
+| Start | **Immediate**, or a **specific date + time** | **Immediate**, at every level |
+| End | **Indefinite**, or a **specific date + time** | **Indefinite**, at every level |
+| Timezone | Any IANA zone (US zones pinned first) | **New York**, at every level. Only matters for a specific date + time (D22) |
 
 - **Immediate** starts the moment it's saved, or the moment the item is set Active if it's
   saved Inactive (PRD R2). The display keeps the setting and adds when it took effect:
@@ -115,31 +115,25 @@ A schedule is a **start**, an **end**, and an **IANA timezone**:
   start.
 - **Daylight saving:** a time skipped by spring-forward is an error. A time that happens
   twice at fall-back uses the first occurrence, with a note.
-- **New items:** a new campaign is Immediate → Indefinite in New York (PRD R1). A new line
-  item or creative starts **fully following** its parent.
+- **New items:** every new campaign, line item, and creative is Immediate → Indefinite in
+  New York (PRD R1). Immediate is stamped when it's created.
 - **Times always read in the item's own zone** (D13, D19). The computer's clock and the
   browser's timezone never change a value (D21). QA check: change the computer's timezone,
   reload, and nothing changes.
 
-### 3. Parent / child dependencies (D32)
+### 3. Parent / child dependencies (D33)
 
-- **Empty means follow.** A line item's or creative's start or end left empty follows the
-  parent's **live**: if the parent changes, it changes too. This works per bound, so a
-  creative can set its own start and still follow its line item's end. Following is
-  transitive: a creative following a line item that follows the campaign tracks the
-  campaign.
-- **Inherited bounds say so:** "From campaign: Oct 8, 2026, 12:00 AM EDT" in the editor,
-  "From campaign" in the details panel, and "Start & end from line item" on table rows.
-- **No cascading edits.** Editing a campaign never changes its line items' own dates or
-  timezones; editing a line item never changes the campaign or its creatives' own dates.
-  Only bounds left empty move with the parent.
+- **No inheritance.** Each level's schedule and timezone are its own. Children never take
+  their parent's values, at creation or later (PRD R1). A new line item under a Sydney
+  campaign is still Immediate → Indefinite in New York until someone changes it.
+- **No cascading edits.** Editing a campaign never changes its line items, and editing a
+  line item never changes the campaign or its creatives.
 - **A parent can stop a child, never extend it.** A child serves only if every level above
-  it is Active and inside its window **and** the child itself is. A parent set to Immediate
-  → Indefinite doesn't make its children Serving; each child still has to be inside its own
-  window. Example: a line item that ended Sep 20 reads **Schedule Expired** under an
-  Indefinite campaign until its own end is extended, or cleared so it follows the campaign.
-- **Extending revives** (PRD R12): move an expired end into the future (or clear it to
-  follow a parent that's still running) and it serves again, with no reactivation.
+  it is serving **and** the child is inside its own window. A parent set to Immediate →
+  Indefinite doesn't make its children Serving. Example: a line item that ended Sep 20
+  reads **Schedule Expired** under an Indefinite campaign until its own end is extended.
+- **Extending revives** (PRD R15): move an expired end into the future, or to Indefinite,
+  and it serves again, with no reactivation.
 
 ### 4. Run State (computed, never stored)
 
@@ -151,7 +145,7 @@ Checks run top-down (campaign → line item → creative), and the first failure
 |---|---|---|---|---|
 | 1 | **Parent Not Serving** | amber ring | Its own schedule is fine, but a parent is Inactive or hasn't started. | "Campaign is set to Inactive." / "Campaign starts Oct 5, 2026, 9:00 AM EDT." |
 | 2 | **Parent Expired** | amber | Its own schedule is fine, but a parent's schedule has ended. | "Line item ended Sep 20, 2026, 11:59 PM EDT." |
-| 3 | **Inactive** | grey ring | Its status is switched off. | "Status is set to Inactive." |
+| 3 | **Inactive** | grey ring | Its status is switched off. Campaigns and line items only; creatives have no status. | "Status is set to Inactive." |
 | 4 | **Pending Start** | blue ring | Active, but its start time hasn't arrived. | "Starts Nov 20, 2026, 12:00 AM EST." |
 | 5 | **Schedule Expired** | grey | Its end time has passed. Extending the end resumes serving; no reactivation needed. | "Ended Sep 30, 2026, 11:59 PM EDT." |
 | 6 | **Serving** | green | Active and inside its schedule, and so is everything above it. | "Serving until Dec 31, 2026, 11:59 PM EST." / "Serving with no end date." |
@@ -166,18 +160,20 @@ Warnings are computed, **never block a save**, and exist so a schedule that won'
 way it reads is caught early (D10). Two severities: **Warning** (amber triangle) and
 **High** (red circle).
 
-**Parent / child rules** (campaign ↔ line item, line item ↔ creative), checked on the
-schedules as they apply, with inherited bounds resolved:
+**Parent / child rules** (campaign ↔ line item, line item ↔ creative):
 
 | Rule | Severity | Message (example) |
 |---|---|---|
 | Never overlaps: the child's whole window falls outside the parent's | **High** | "Never serves: its whole schedule falls outside the campaign's (Sep 15, 2026, 12:00 AM EDT → Dec 31, 2026, 11:59 PM EST)." |
-| Starts before the parent starts | Warning | "Starts Sep 1, 2026, 12:00 AM EDT, before the campaign starts (Sep 15, 2026, 12:00 AM EDT). It won't serve until then." |
-| Ends after the parent ends (incl. Indefinite under a parent with an end) | Warning | "Runs indefinitely, but the campaign ends Dec 31, 2026, 11:59 PM EST. It stops serving then." |
+| Starts before the parent starts: the child has a **specific** start earlier than the parent's | Warning | "Starts Sep 1, 2026, 12:00 AM EDT, before the campaign starts (Sep 15, 2026, 12:00 AM EDT). It won't serve until then." |
+| Ends after the parent ends: the child has a **specific** end later than the parent's | Warning | "Ends Jan 15, 2027, 11:59 PM EST, after the campaign ends (Dec 31, 2026, 11:59 PM EST). It stops serving then." |
 | Different timezone from the parent, when a specific time is involved (D18, D22) | Warning | "Set to its own timezone, Los Angeles time (PDT); the campaign uses New York time (EDT). The line item starts Oct 8, 2026, 12:00 AM PDT (Oct 8, 2026, 3:00 AM EDT campaign time)…" |
 
-A bound the child **follows** always matches the parent, so it never triggers these. "Never
-overlaps" replaces the start / end rules when it applies.
+A child's **Immediate** start never triggers "Starts before", and an **Indefinite** end never
+triggers "Ends after" (PRD R18). The parent's window already bounds delivery, so they carry
+no risk; while outside it, the child just reads Parent Not Serving / Parent Expired. "Never
+overlaps" and "Coverage" still apply, and "Never overlaps" replaces the start / end rules
+when it applies.
 
 **Coverage rule** (the line item and its creatives as a group):
 
@@ -196,18 +192,17 @@ overlaps" replaces the start / end rules when it applies.
 
 **Stop-delivery confirmations** (these *do* ask first, D20). Any save that would stop
 something **currently Serving** asks "Stop delivery now?" and lists everything it stops,
-including children that follow the changed dates. Triggers: a start or end change, or
+including descendants it stops (e.g. a line item's creatives when the line item's end moves
+into the past). Triggers: a start or end change, or
 setting a campaign or line item **Inactive**. Changes that only resume or extend delivery
 save without asking. Removing a creative also confirms.
 
 ### 6. Schedule editor (one dialog for every level)
 
-- **Timezone first.** The helper text says what it applies to: "Applies when you set a date
-  of its own. Until then it follows the campaign."
-- **Start date / End date dropdowns** list the no-date choices above a calendar:
-  - Campaign: **Immediate** / **Indefinite**.
-  - Line item / creative: **Same as campaign** (or *line item*) first, with the parent's
-    value shown, then Immediate / Indefinite.
+- **Timezone first.** Muted, with "Applies when a specific start or end time is set", until a
+  date is picked.
+- **Start date / End date dropdowns** list **Immediate** (start) or **Indefinite** (end)
+  above a calendar. The same at every level; there are no parent-based options.
 - **Specific dates:** picking a calendar day makes the bound specific and requires a time.
   A picked date has an **×** to clear it back to the default.
 - **Time field** (replaces the browser's native time picker, whose scrolling columns loop
@@ -229,7 +224,7 @@ save without asking. Removing a creative also confirms.
 ### 7. Tables: one Schedule column
 
 Every table shows a schedule the same way: one **Schedule** column (start, "→ end", then a
-caption with the zone when a specific time applies, and what comes from the parent), with
+caption with the zone when a specific time applies), with
 a **pencil** that opens that row's editor, followed by **Run State**. Separate Start / End
 columns were combined into this column to simplify the tables.
 
@@ -249,8 +244,10 @@ Weighted Creatives has no Status column: production has none, and Run State cove
   Pixel Name.
 - **Weights split delivery only among creatives Serving right now.** A creative that isn't
   Serving shows "–". One Serving creative is 100%. With no typed weights the split is even.
-  Typed weights are kept, and the rest share the remainder. Over 100% (or all typed) scales
-  to fit, in whole percents that always total 100.
+  Typed weights are kept, and the rest share the remainder. Over 100% scales to fit, in
+  whole percents that always total 100. *Not covered by the PRD (R24):* when every Serving
+  creative has a typed weight and they total **under** 100%, the prototype also scales them
+  up to 100%.
 - The split re-balances on its own as creatives start and end. A typed weight is kept while
   its creative isn't Serving and applies again when it's back. The reset icon clears typed
   weights; the arrow sorts by share.
@@ -262,9 +259,10 @@ Weighted Creatives has no Status column: production has none, and Run State cove
 - **Add New Campaign** (advertiser): Name, Vertical, Line of Business, all required. It opens
   the new campaign, Immediate → Indefinite in New York.
 - **Add New Line Item** (campaign): Line Item Name, Media Type (banner / video), Rate Type
-  (CPC / CPE / CPM / Flat Fee). It opens the new line item, following the campaign's
-  schedule.
-- **Add Weighted Creatives** (line item): new creatives follow the line item's schedule.
+  (CPC / CPE / CPM / Flat Fee). It opens the new line item, Immediate → Indefinite in New
+  York, whatever the campaign's schedule.
+- **Add Weighted Creatives** (line item): new creatives are Immediate → Indefinite in New
+  York, too.
 
 ### 10. Testing: Preset sample, Demo, restart, demo clock (prototype-only)
 
@@ -278,8 +276,8 @@ production.
 
 | Control | What it does | Use it to |
 |---|---|---|
-| **Preset sample** (default) | Seeded campaign 4074: 4 line items, 9 creatives, a spread of Run States, warnings, and timezones (one Los Angeles line item). Three creatives follow their line item. Opens on line item 25095. | See every state and warning without setup. |
-| **Demo** | Starts empty on the advertiser page (Kerv). Build a campaign, line items, and creatives with the create forms. | Test the first-time flow and defaults: a new campaign is Immediate → Indefinite; new children follow their parent. |
+| **Preset sample** (default) | Seeded campaign 4074: 4 line items, 9 creatives, a spread of Run States, warnings, and timezones (one Los Angeles line item). Opens on line item 25095. | See every state and warning without setup. |
+| **Demo** | Starts empty on the advertiser page (Kerv). Build a campaign, line items, and creatives with the create forms. | Test the first-time flow and defaults: every new campaign, line item, and creative is Immediate → Indefinite in New York. |
 | **↻ Restart demo** (Demo only) | Confirms, then clears everything built in Demo and returns to an empty advertiser. **The preset sample isn't touched.** | Re-run the build-from-scratch flow cleanly. |
 | **Demo clock** | Jumps +1 hour / +1 day / +1 week / +30 days / −1 day / −1 week. It turns amber while simulated; *Back to real time* resets it. It applies in both modes. | Watch Pending Start → Serving → Schedule Expired, warnings change, and weights re-balance. |
 
@@ -293,10 +291,10 @@ production.
   `localStorage.removeItem('radius.scheduling.v1'); location.reload()`.
 - **Good test passes:**
   - **States:** in the sample, jump +30 days and back.
-  - **Inheritance:** change the campaign's end; following children move, and ones with
-    their own dates stay put.
-  - **Defaults:** in Demo, create a campaign and line item; the line item reads "From
-    campaign".
+  - **No inheritance:** change the campaign's schedule; its line items and creatives don't
+    change.
+  - **Defaults:** in Demo, set the campaign to another timezone, then create a line item;
+    it's Immediate → Indefinite in New York.
   - **Warnings:** give a line item a start before the campaign's, or another timezone.
 - The baseline's User / Admin toggle is hidden (`SHOW_ROLE_TOGGLE`).
 
@@ -308,14 +306,15 @@ engineering's. The prototype only models their visible result.
 
 ## Not built yet / open refinements
 
-- **Not built:** a per-creative Active / Inactive switch; shared creatives across line
+- **Not built:** shared creatives across line
   items (D27, decided "for now"); a warnings roll-up in the top-bar bell; the migration
   cases (R16 objects without dates, R17 flag serving objects for release); distribution
   tags per line item (shared demo data today).
 - **Possible refinements (not requested):** skip the timezone warning when the parent has
   no specific times (its zone can't shift anything); wording for "Immediate · Started …";
   pagination parity between tables.
-- **Provisional names (D12, D17):** "Serving" and the merged "Parent Not Serving".
+- **Provisional names (D12, D17):** "Serving" and the merged "Parent Not Serving". (Both are
+  now in the PRD, R16.)
 
 ## Decisions log
 
@@ -353,7 +352,8 @@ now* above.**
 | D26 | *Superseded by D32:* there's no zone-following to re-follow. **An override never goes back to following on its own.** It was set deliberately, so a later parent change, even to the same zone, doesn't make it follow again. Only the user picking "Same as campaign" (or "Same as line item") does. While the zones happen to match, the D25 warning is quiet. | User, 2026-10-01 |
 | D29 | *Reversed by D32 (2026-10-14):* new campaigns are Immediate → Indefinite again (PRD R1); new line items / creatives follow their parent. **A brand-new campaign, line item, or creative has no schedule until the user sets one.** No Immediate / Indefinite (or any date) is pre-selected. The entity is **Not Scheduled** (a new run state, grey ring) and doesn't serve; its children read **Parent Not Serving** ("Campaign has no schedule yet"). The editor opens with empty date and time fields, Save stays disabled until both bounds are set, and Immediate / Indefinite remain available in the date dropdowns as explicit choices. A new child still pre-fills its **timezone** from its parent (D24); only dates are left unset. Out-of-sync warnings skip a pair until both sides have a schedule. Nothing opens the editor automatically after Create; the page shows "Not set" and the user clicks Edit Schedule. **Amends D6 and D15 and departs from PRD R1** (defaults Immediate / Indefinite), so **flag to the PRD owner.** Existing (sample/seeded) entities are unchanged. | User, 2026-10-01 |
 | D30 | *Replaced by D32 (2026-10-14):* the Match button is removed; leaving a child's dates empty follows the parent live. **"Match parent schedule" in the child editors.** The line item editor has **Match campaign schedule**; the creative editor has **Match line item schedule**. It fills the draft with the parent's start, end, and timezone, with the zone set to follow the parent ("Same as …", D24). It's a **one-time copy**: the fields stay editable and nothing stays linked to the parent's dates. The button shows the parent's schedule on one line beside it, reads **Matches …** (disabled) while the draft already equals the parent's, and is disabled with a tooltip when the parent has no schedule yet (D29). An Immediate parent copies as Immediate, which resolves when the child is saved. | User, 2026-10-01 |
-| D32 | **Empty means default, and edits don't cascade** (product-lead feedback, 2026-10-14). **(1)** A campaign's start or end left empty is **Immediate** / **Indefinite** (PRD R1; new campaigns start there). **(2)** Immediate / Indefinite never need a time; only a Specific date needs both date and time (D23). **(3)** Editing a campaign never changes its line items, and editing a line item never changes the campaign or its creatives: a child's own dates **and timezone** are never rewritten. **(4)** A line item's or creative's start or end left empty **follows the parent's** live, per bound (`inherit`), so a child can set its own start and still follow the parent's end. New line items and creatives start fully following. **(5)** Inherited bounds say so: "From campaign: …" in the editor, "From campaign" in summaries and tables ("Start & end from line item" on creative rows). In the editor the date dropdown lists **"Same as campaign"** (the default) above Immediate / Indefinite, and a picked date has a clear (×) button that goes back to following. Replaces D24–D26's zone cascade, D29, and D30. | Product lead via user, 2026-10-14 |
+| D33 | **Align with the live PRD (Confluence v5, 2026-10-15).** (1) **No inheritance:** every new campaign, line item, and creative defaults to Immediate → Indefinite in New York, and children never take schedule or timezone values from their parent (R1). The "Same as campaign / line item" options and "From …" labels are removed. (2) A child's **Immediate** start never triggers "Starts before parent", and an **Indefinite** end never triggers "Ends after parent" (R18). (3) **Creatives have no administrative status** (R7). Older saves that followed a parent are converted once to fixed copies of the parent's dates. Supersedes D32 (4) and (5); D32 (1)–(3) still hold. | User + PRD v5, 2026-11-03 |
+| D32 | *Partly superseded by D33 (2026-11-03): (4) and (5), children following the parent, no longer apply.* **Empty means default, and edits don't cascade** (product-lead feedback, 2026-10-14). **(1)** A campaign's start or end left empty is **Immediate** / **Indefinite** (PRD R1; new campaigns start there). **(2)** Immediate / Indefinite never need a time; only a Specific date needs both date and time (D23). **(3)** Editing a campaign never changes its line items, and editing a line item never changes the campaign or its creatives: a child's own dates **and timezone** are never rewritten. **(4)** A line item's or creative's start or end left empty **follows the parent's** live, per bound (`inherit`), so a child can set its own start and still follow the parent's end. New line items and creatives start fully following. **(5)** Inherited bounds say so: "From campaign: …" in the editor, "From campaign" in summaries and tables ("Start & end from line item" on creative rows). In the editor the date dropdown lists **"Same as campaign"** (the default) above Immediate / Indefinite, and a picked date has a clear (×) button that goes back to following. Replaces D24–D26's zone cascade, D29, and D30. | Product lead via user, 2026-10-14 |
 | D31 | **HubSpot scheduling is back-end work; the prototype adds no HubSpot UI.** Users set schedules in Radius. Engineering owns both directions: **HubSpot → Radius** (R5–R6: a HubSpot-created campaign takes its start, end, and zone once at creation; later HubSpot edits don't sync) and **Radius → HubSpot** (when a campaign is pushed to HubSpot, the back end converts the schedule — UTC + IANA zone, Immediate / Indefinite, and possibly an unset schedule under D29 — into whatever HubSpot expects). R7 (editable in Radius after creation) is already met, since every campaign's schedule is editable. The planned HubSpot-origin indicator is dropped. | User, 2026-10-07 |
 | D28 | **Weights split delivery only among the creatives Serving right now.** A creative that's Pending Start, Expired, Inactive, or under a parent that isn't serving gets no share ("–"). The split is computed live, so it re-balances as creatives start and end, with no stored weights rewritten. A weight the user typed is kept until reset, including while its creative isn't Serving, and applies again when that creative is back. Split rules follow the multi-creative demo (`Line-Item-Multi-Creative`): one Serving creative = 100%, no typed weights = even split, typed weights honored with the rest shared evenly, over-100% (or all-typed under 100%) scaled to fit, whole percents totaling 100. | User, 2026-10-01 |
 | D27 | **A shared creative's schedule applies under its home line item only.** The **home** is the line item the creative was first added to. The creative's zone follows the home line item (D24). Its Specific start/end dates and times apply only under the home. Under every other associated line item, the creative runs **Immediate → Indefinite**, so that line item's own window (in its own zone) controls it. Answers D24 open question 1; amends D11. ⚠️ **Revisit flag:** good for now, may be adjusted later. Rules: [Shared creatives](#shared-creatives-d4-d11-d27). | User, 2026-10-01 |
@@ -364,7 +364,7 @@ now* above.**
 |---|---|
 | Types: `Schedule` (`ScheduleStart` / `ScheduleEnd`, incl. `inherit`), `RunningState`, `Campaign`, `LineItem`, `Creative`, `View`, `ExperienceMode`, `Workspace` | [`../src/types.ts`](../src/types.ts) |
 | Wall-clock ⇄ UTC via an explicit zone, DST, formatting, `evaluateRunning` (PRD order), `resolveImmediate` | [`../src/lib/schedule.ts`](../src/lib/schedule.ts) |
-| Inheritance: `effectiveSchedule` / `effectiveLineItemSchedule` / `effectiveCreativeSchedule`, `childDefaultSchedule`, `inheritedNote`, storage migration | [`../src/lib/scheduleInheritance.ts`](../src/lib/scheduleInheritance.ts) |
+| Storage migration from earlier builds (`unset` / `inherit` bounds → concrete values) | [`../src/lib/scheduleMigration.ts`](../src/lib/scheduleMigration.ts) |
 | Warning rules (parent/child) | [`../src/lib/scheduleWarnings.ts`](../src/lib/scheduleWarnings.ts) |
 | Hierarchy wiring, roll-ups, coverage rule, D20 impact | [`../src/lib/hierarchy.ts`](../src/lib/hierarchy.ts) |
 | Run State labels / colors / tooltips | [`../src/lib/runningStatus.ts`](../src/lib/runningStatus.ts) |
@@ -394,6 +394,14 @@ Preset sample / Demo toggle, and the creative library are prototype stand-ins.
 | 7 Hand-off: this doc, Obsidian note, visual Artifact | ✅ (2026-10-15) |
 
 ## Changelog
+
+- **2026-11-03**: **Aligned with the live PRD (Confluence v5) → D33.** Removed inheritance
+  (new line items and creatives are Immediate → Indefinite, New York; no "Same as …"
+  options or "From …" labels). "Starts before" / "Ends after" now need a specific child
+  start / end. Creatives have no administrative status. Migration converts older
+  following schedules to fixed copies. Sample creatives 8431 / 8441 / 8451 now hold their
+  line item's dates as their own. Sections 1–3, 5–7, 9–10, the implementation map, and
+  open items updated.
 
 - **2026-10-16**: **Time field replaced.** The native time input (looping scroll columns) is
   now `ScheduleTimeField`: a finite list (15-minute steps + 11:59 PM, opens at the current

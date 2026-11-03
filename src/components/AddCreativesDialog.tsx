@@ -24,7 +24,7 @@ interface Props {
 /**
  * Add Creatives (from the multi-creative demo and the production picker):
  * search the creative library, pick one or more, Add. New creatives start
- * with start and end left empty, following the line item's timeline (D32); their
+ * at the PRD defaults, Immediate → Indefinite in New York (R1, D33); their
  * weight joins the auto split. Creatives already on a line item aren't listed
  * — a creative belongs to one line item until shared creatives (D27) land.
  */
@@ -97,8 +97,8 @@ export const AddCreativesDialog = ({ open, onClose, onSaved, lineItem }: Props) 
           )}
         />
         <Typography variant="caption" color="text.secondary" sx={{ display: "block", mt: 1.5 }}>
-          New creatives follow the line item's schedule until you set their own dates from
-          their row.
+          New creatives start Immediate → Indefinite in New York time. Set their own dates
+          from their row.
         </Typography>
       </DialogContent>
       <DialogActions sx={{ px: 3, py: 2 }}>

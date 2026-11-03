@@ -34,8 +34,8 @@ const zoneName = (zone: string, atMs: number) => {
 /**
  * Parent/child rules: child starts before parent, runs past parent, never
  * overlaps parent, or uses a different timezone while specific times are in
- * play (D18, scoped by D22). Pass *effective* schedules (inherited bounds
- * resolved, D32); a bound the child inherits always matches the parent's.
+ * play (D18, scoped by D22). "Starts before" / "Ends after" need a specific
+ * child start / end; Immediate and Indefinite never trigger them (PRD R18).
  */
 export const parentChildWarnings = (
   child: ScheduledEntity,
@@ -59,24 +59,21 @@ export const parentChildWarnings = (
       } → ${Number.isFinite(pe) ? formatInZone(pe, ptz) : "Indefinite"}).`,
     });
   } else {
-    if (cs < ps) {
-      const childStart = Number.isFinite(cs)
-        ? `Starts ${formatInZone(cs, ctz)}`
-        : "Starts immediately";
+    // An Immediate start or Indefinite end carries no delivery risk: the
+    // parent's window already bounds it (PRD R18). Only a child's own
+    // specific start / end is compared.
+    if (child.schedule.start.kind === "specific" && cs < ps) {
       warnings.push({
         id: "starts-before-parent",
         severity: "warning",
-        message: `${childStart}, before the ${p} starts (${formatInZone(ps, ptz)}). It won't serve until then.`,
+        message: `Starts ${formatInZone(cs, ctz)}, before the ${p} starts (${formatInZone(ps, ptz)}). It won't serve until then.`,
       });
     }
-    if (ce > pe) {
+    if (child.schedule.end.kind === "specific" && ce > pe) {
       warnings.push({
         id: "ends-after-parent",
         severity: "warning",
-        message:
-          child.schedule.end.kind === "indefinite"
-            ? `Runs indefinitely, but the ${p} ends ${formatInZone(pe, ptz)}. It stops serving then.`
-            : `Ends ${formatInZone(ce, ctz)}, after the ${p} ends (${formatInZone(pe, ptz)}). It stops serving then.`,
+        message: `Ends ${formatInZone(ce, ctz)}, after the ${p} ends (${formatInZone(pe, ptz)}). It stops serving then.`,
       });
     }
   }
@@ -97,8 +94,6 @@ export const parentChildWarnings = (
         `ends ${formatInZone(ce, ctz)} (${formatInZone(ce, ptz)} ${p} time)`,
       );
     }
-    // Pass effective schedules: a child only reads in a different zone when
-    // it has a date of its own, set in its own zone (D32), so name it as such.
     const lead = `Set to its own timezone, ${zoneName(ctz, ref)}; the ${p} uses ${zoneName(ptz, ref)}.`;
     warnings.push({
       id: "timezone-mismatch",

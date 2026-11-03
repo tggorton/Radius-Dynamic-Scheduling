@@ -24,10 +24,6 @@ import {
   creativesOf,
   evaluateCreative,
 } from "../lib/hierarchy";
-import {
-  effectiveCreativeSchedule,
-  effectiveLineItemSchedule,
-} from "../lib/scheduleInheritance";
 import { weightShares } from "../lib/scheduleWeights";
 import { useApp } from "../state/AppContext";
 import { SectionHeader } from "./SectionHeader";
@@ -82,8 +78,7 @@ export const CreativesSection = ({ lineItem, campaign }: Props) => {
   const evaluated = creatives.map((cr) => ({
     creative: cr,
     evaluation: evaluateCreative(cr, lineItem, campaign, now),
-    warnings: creativeWarnings(cr, lineItem, campaign),
-    effective: effectiveCreativeSchedule(cr, lineItem, campaign),
+    warnings: creativeWarnings(cr, lineItem),
   }));
   const shares = weightShares(
     evaluated.map((r) => ({
@@ -210,7 +205,7 @@ export const CreativesSection = ({ lineItem, campaign }: Props) => {
               </TableCell>
             </TableRow>
           )}
-          {visible.map(({ creative: cr, evaluation, warnings, effective }) => (
+          {visible.map(({ creative: cr, evaluation, warnings }) => (
             <TableRow
               key={cr.id}
               hover
@@ -243,9 +238,7 @@ export const CreativesSection = ({ lineItem, campaign }: Props) => {
               </TableCell>
               <TableCell>
                 <ScheduleCell
-                  effective={effective}
-                  own={cr.schedule}
-                  parentKind="line item"
+                  schedule={cr.schedule}
                   name={cr.name}
                   onEdit={() => setEditing(cr)}
                 />
@@ -300,12 +293,11 @@ export const CreativesSection = ({ lineItem, campaign }: Props) => {
           title="Creative Schedule"
           entityKind="creative"
           schedule={editing.schedule}
-          status={editing.status}
-          warningsFor={(draft) => creativeWarnings({ ...editing, schedule: draft }, lineItem, campaign)}
+          status="active" // creatives have no status (PRD R7)
+          warningsFor={(draft) => creativeWarnings({ ...editing, schedule: draft }, lineItem)}
           impactOf={(draft) =>
             creativeImpact(editing, { ...editing, schedule: draft }, lineItem, campaign, now)
           }
-          parent={{ kind: "line item", schedule: effectiveLineItemSchedule(lineItem, campaign) }}
           onSave={(schedule) => setCreativeSchedule(editing.id, schedule)}
         />
       )}

@@ -22,7 +22,7 @@ interface Props {
 /**
  * Create Campaign, from the advertiser page: Name, Vertical, Line of Business
  * (the production form). Saving opens the new campaign. It starts at the PRD
- * defaults, Immediate → Indefinite in New York time (R1, D32).
+ * defaults, Immediate → Indefinite in New York time (R1, D33).
  */
 export const CreateCampaignDialog = ({ open, onClose, onSaved }: Props) => {
   const { createCampaign } = useApp();

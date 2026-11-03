@@ -10,14 +10,11 @@ import { RunningStateChip } from "./RunningStateChip";
 import { ScheduleWarningList } from "./ScheduleWarningList";
 
 interface Props {
-  /** The *effective* schedule (inherited bounds resolved, D32). */
   schedule: Schedule;
   evaluation: RunningEvaluation;
   warnings: ScheduleWarning[];
   /** Heading above the warning list, e.g. "2 line items out of sync". */
   warningsHeading?: string;
-  /** Child levels: which bounds follow the parent, and the parent's kind ("campaign"). */
-  inherited?: { start: boolean; end: boolean; parentKind: string };
   onEdit: () => void;
 }
 
@@ -34,7 +31,7 @@ const Cell = ({ label, children }: { label: string; children: ReactNode }) => (
   </Box>
 );
 
-const Bound = ({ value, muted, from }: { value: BoundDisplay; muted?: boolean; from?: string }) => (
+const Bound = ({ value, muted }: { value: BoundDisplay; muted?: boolean }) => (
   <>
     <Typography variant="body2" sx={{ fontSize: 14 }} color={muted ? "text.secondary" : "text.primary"}>
       {value.primary}
@@ -44,27 +41,19 @@ const Bound = ({ value, muted, from }: { value: BoundDisplay; muted?: boolean; f
         {value.secondary}
       </Typography>
     )}
-    {from && (
-      <Typography variant="caption" color="text.secondary" sx={{ display: "block" }}>
-        From {from}
-      </Typography>
-    )}
   </>
 );
 
 /**
  * The schedule row inside a details panel: Start · End · Timezone · Run State,
  * then any out-of-sync warnings spelled out. Immediate/Indefinite lead with the
- * setting (D14, D22); the timezone reads muted until a bound is Specific. A
- * bound a line item or creative inherits shows its parent's value plus
- * "From campaign" (D32).
+ * setting (D14, D22); the timezone reads muted until a bound is Specific.
  */
 export const ScheduleSummary = ({
   schedule,
   evaluation,
   warnings,
   warningsHeading,
-  inherited,
   onEdit,
 }: Props) => {
   const { now } = useApp();
@@ -93,22 +82,17 @@ export const ScheduleSummary = ({
         }}
       >
         <Cell label="Start">
-          <Bound value={describeStart(schedule, now)} from={inherited?.start ? inherited.parentKind : undefined} />
+          <Bound value={describeStart(schedule, now)} />
         </Cell>
         <Cell label="End">
-          <Bound value={describeEnd(schedule)} from={inherited?.end ? inherited.parentKind : undefined} />
+          <Bound value={describeEnd(schedule)} />
         </Cell>
         <Cell label="Timezone">
           <Bound
             muted={!zoneMatters}
             value={{
               primary: describeTimeZone(schedule.timeZone, now),
-              secondary:
-                inherited?.start && inherited.end
-                  ? `From ${inherited.parentKind}`
-                  : zoneMatters
-                    ? schedule.timeZone
-                    : "Applies when specific times are set",
+              secondary: zoneMatters ? schedule.timeZone : "Applies when specific times are set",
             }}
           />
         </Cell>

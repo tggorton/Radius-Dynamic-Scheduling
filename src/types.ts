@@ -177,31 +177,23 @@ export type AdminStatus = "active" | "inactive";
 /**
  * Start bound. `immediate` resolves to a real instant at save, or at activation
  * if saved Inactive (D14); `resolvedAt` stays undefined until then. `specific`
- * always carries both a date and a time (D23), stored as UTC. `inherit` (line
- * items and creatives only) means the start was left empty, so it follows the
- * parent's start live (D32).
+ * always carries both a date and a time (D23), stored as UTC.
  */
 export type ScheduleStart =
-  | { kind: "inherit" }
   | { kind: "immediate"; resolvedAt?: string }
   | { kind: "specific"; utc: string };
 
-/**
- * End bound. `indefinite` is never evaluated (PRD R3). The end is exclusive.
- * `inherit` follows the parent's end live (D32).
- */
+/** End bound. `indefinite` is never evaluated (PRD R3). The end is exclusive. */
 export type ScheduleEnd =
-  | { kind: "inherit" }
   | { kind: "indefinite" }
   | { kind: "specific"; utc: string };
 
 /**
- * One schedule shape for campaigns, line items, and creatives — as the user
- * set it on that entity. Times are UTC; `timeZone` is the IANA zone they were
- * entered in and are shown in (D13, D19). It only carries meaning for this
- * entity's own `specific` bounds (D22). Inherited bounds are resolved against
- * the parent with `effectiveSchedule` (scheduleInheritance.ts) before display
- * or evaluation; a parent edit never rewrites a child's stored schedule (D32).
+ * One schedule shape for campaigns, line items, and creatives. Each level has
+ * its own, and children never inherit schedule or timezone values from their
+ * parent (PRD R1, D33). Times are UTC; `timeZone` is the IANA zone they were
+ * entered in and are shown in (D13, D19). It only carries meaning for
+ * `specific` bounds (D22).
  */
 export interface Schedule {
   start: ScheduleStart;
@@ -260,14 +252,14 @@ export interface LineItem {
 }
 
 /**
- * A creative on a line item. One line item per creative in this pass (D27's
+ * A creative on a line item. Creatives have no administrative status (PRD R7):
+ * whether one serves comes only from its schedule and its parents. One line item per creative in this pass (D27's
  * shared "home" rule comes later). `id` is the Creative ID shown in the table.
  */
 export interface Creative {
   id: number;
   lineItemId: number;
   name: string;
-  status: AdminStatus;
   schedule: Schedule;
   /** A weight the user typed (0–100), kept until reset. `null` = auto-split.
    *  The share actually applied is computed among Serving creatives (D28). */
